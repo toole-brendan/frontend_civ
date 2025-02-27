@@ -55,7 +55,7 @@ import { Alert } from './AlertTable';
 
 interface AlertDetailPanelProps {
   alert: Alert;
-  activeTab: number;
+  activeTab?: number;
 }
 
 // Styled components

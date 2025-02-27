@@ -48,15 +48,15 @@ const SupplierHealthDashboard: React.FC<SupplierHealthDashboardProps> = ({
   }: { 
     title: string; 
     value: number; 
-    previousValue: number; 
-    industryValue: number; 
+    previousValue?: number; 
+    industryValue?: number; 
     unit?: string; 
     metricKey: string;
   }) => {
     const color = getColorByScore(value);
-    const trendIcon = getTrendIcon(value, previousValue);
-    const delta = ((value - previousValue) / previousValue * 100).toFixed(1);
-    const showPositiveSign = value > previousValue;
+    const trendIcon = getTrendIcon(value, previousValue || 0);
+    const delta = ((value - (previousValue || 0)) / (previousValue || 1) * 100).toFixed(1);
+    const showPositiveSign = value > (previousValue || 0);
 
     return (
       <Paper 
@@ -93,7 +93,7 @@ const SupplierHealthDashboard: React.FC<SupplierHealthDashboardProps> = ({
             {trendIcon}
             <Typography 
               variant="body2" 
-              color={value >= previousValue ? 'success.main' : 'error.main'}
+              color={value >= (previousValue || 0) ? 'success.main' : 'error.main'}
               sx={{ ml: 0.5 }}
             >
               {showPositiveSign && '+'}{delta}%
@@ -107,7 +107,7 @@ const SupplierHealthDashboard: React.FC<SupplierHealthDashboardProps> = ({
           </Typography>
           <LinearProgress 
             variant="determinate" 
-            value={(value / (industryValue * 1.25)) * 100} 
+            value={(value / (industryValue || 1.25)) * 100} 
             sx={{ 
               height: 6, 
               borderRadius: 1,
@@ -132,9 +132,21 @@ const SupplierHealthDashboard: React.FC<SupplierHealthDashboardProps> = ({
         <Grid item xs={12} sm={6} md={2.4}>
           <MetricCard
             title="Overall Performance"
-            value={metrics.overallPerformance.score}
-            previousValue={metrics.overallPerformance.previousScore}
-            industryValue={metrics.overallPerformance.industryAverage}
+            value={typeof metrics.overallPerformance === 'number' 
+              ? metrics.overallPerformance 
+              : metrics.overallPerformance && typeof metrics.overallPerformance === 'object' && 'score' in metrics.overallPerformance
+                ? (metrics.overallPerformance as any).score 
+                : 0}
+            previousValue={typeof metrics.overallPerformance === 'number' 
+              ? undefined 
+              : metrics.overallPerformance && typeof metrics.overallPerformance === 'object' && 'previousScore' in metrics.overallPerformance
+                ? (metrics.overallPerformance as any).previousScore
+                : undefined}
+            industryValue={typeof metrics.overallPerformance === 'number' 
+              ? undefined 
+              : metrics.overallPerformance && typeof metrics.overallPerformance === 'object' && 'industryAverage' in metrics.overallPerformance
+                ? (metrics.overallPerformance as any).industryAverage
+                : undefined}
             unit="/100"
             metricKey="overallPerformance"
           />
@@ -142,9 +154,21 @@ const SupplierHealthDashboard: React.FC<SupplierHealthDashboardProps> = ({
         <Grid item xs={12} sm={6} md={2.4}>
           <MetricCard
             title="On-Time Delivery"
-            value={metrics.onTimeDelivery.rate}
-            previousValue={metrics.onTimeDelivery.previousRate}
-            industryValue={metrics.onTimeDelivery.industryAverage}
+            value={typeof metrics.onTimeDelivery === 'number' 
+              ? metrics.onTimeDelivery 
+              : metrics.onTimeDelivery && typeof metrics.onTimeDelivery === 'object' && 'rate' in metrics.onTimeDelivery
+                ? (metrics.onTimeDelivery as any).rate 
+                : 0}
+            previousValue={typeof metrics.onTimeDelivery === 'number' 
+              ? undefined 
+              : metrics.onTimeDelivery && typeof metrics.onTimeDelivery === 'object' && 'previousRate' in metrics.onTimeDelivery
+                ? (metrics.onTimeDelivery as any).previousRate
+                : undefined}
+            industryValue={typeof metrics.onTimeDelivery === 'number' 
+              ? undefined 
+              : metrics.onTimeDelivery && typeof metrics.onTimeDelivery === 'object' && 'industryAverage' in metrics.onTimeDelivery
+                ? (metrics.onTimeDelivery as any).industryAverage
+                : undefined}
             unit="%"
             metricKey="onTimeDelivery"
           />
@@ -152,9 +176,9 @@ const SupplierHealthDashboard: React.FC<SupplierHealthDashboardProps> = ({
         <Grid item xs={12} sm={6} md={2.4}>
           <MetricCard
             title="Quality Acceptance"
-            value={metrics.qualityAcceptance.rate}
-            previousValue={metrics.qualityAcceptance.previousRate}
-            industryValue={metrics.qualityAcceptance.industryAverage}
+            value={metrics.qualityAcceptance?.rate || 0}
+            previousValue={metrics.qualityAcceptance?.previousRate}
+            industryValue={metrics.qualityAcceptance?.industryAverage}
             unit="%"
             metricKey="qualityAcceptance"
           />
@@ -162,9 +186,9 @@ const SupplierHealthDashboard: React.FC<SupplierHealthDashboardProps> = ({
         <Grid item xs={12} sm={6} md={2.4}>
           <MetricCard
             title="Price Competitiveness"
-            value={metrics.priceCompetitiveness.score}
-            previousValue={metrics.priceCompetitiveness.previousScore}
-            industryValue={metrics.priceCompetitiveness.industryAverage}
+            value={metrics.priceCompetitiveness?.score || 0}
+            previousValue={metrics.priceCompetitiveness?.previousScore}
+            industryValue={metrics.priceCompetitiveness?.industryAverage}
             unit="/100"
             metricKey="priceCompetitiveness"
           />
@@ -172,9 +196,9 @@ const SupplierHealthDashboard: React.FC<SupplierHealthDashboardProps> = ({
         <Grid item xs={12} sm={6} md={2.4}>
           <MetricCard
             title="Documentation Accuracy"
-            value={metrics.documentationAccuracy.rate}
-            previousValue={metrics.documentationAccuracy.previousRate}
-            industryValue={metrics.documentationAccuracy.industryAverage}
+            value={metrics.documentationAccuracy?.rate || 0}
+            previousValue={metrics.documentationAccuracy?.previousRate}
+            industryValue={metrics.documentationAccuracy?.industryAverage}
             unit="%"
             metricKey="documentationAccuracy"
           />

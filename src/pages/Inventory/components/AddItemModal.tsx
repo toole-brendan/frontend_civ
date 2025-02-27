@@ -32,6 +32,7 @@ import {
   Inventory as InventoryIcon,
 } from '@mui/icons-material';
 import { Category } from './InventoryFilters';
+import { TechComponentsInventoryItem } from '../../../pages/Inventory/types';
 
 // Define the inventory item interface
 export interface NewInventoryItem {

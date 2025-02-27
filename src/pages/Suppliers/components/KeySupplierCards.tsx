@@ -40,10 +40,11 @@ interface ExtendedSupplier extends Supplier {
 
 interface KeySupplierCardsProps {
   suppliers: ExtendedSupplier[];
-  onContactSupplier: (supplier: ExtendedSupplier) => void;
-  onCreateOrder: (supplier: ExtendedSupplier) => void;
-  onPaySupplier: (supplier: ExtendedSupplier) => void;
-  onViewDetails: (supplier: ExtendedSupplier) => void;
+  onContactSupplier?: (supplier: ExtendedSupplier) => void;
+  onCreateOrder?: (supplier: ExtendedSupplier) => void;
+  onPaySupplier?: (supplier: ExtendedSupplier) => void;
+  onViewDetails?: (supplier: ExtendedSupplier) => void;
+  onSupplierSelect?: (supplierOrId: string | Supplier) => void;
 }
 
 const KeySupplierCards: React.FC<KeySupplierCardsProps> = ({
@@ -52,8 +53,36 @@ const KeySupplierCards: React.FC<KeySupplierCardsProps> = ({
   onCreateOrder,
   onPaySupplier,
   onViewDetails,
+  onSupplierSelect,
 }) => {
   const theme = useTheme();
+
+  // Use onSupplierSelect as fallback for onViewDetails
+  const handleViewDetails = (supplier: ExtendedSupplier) => {
+    if (onViewDetails) {
+      onViewDetails(supplier);
+    } else if (onSupplierSelect) {
+      onSupplierSelect(supplier);
+    }
+  };
+
+  const handleContactSupplier = (supplier: ExtendedSupplier) => {
+    if (onContactSupplier) {
+      onContactSupplier(supplier);
+    }
+  };
+
+  const handleCreateOrder = (supplier: ExtendedSupplier) => {
+    if (onCreateOrder) {
+      onCreateOrder(supplier);
+    }
+  };
+
+  const handlePaySupplier = (supplier: ExtendedSupplier) => {
+    if (onPaySupplier) {
+      onPaySupplier(supplier);
+    }
+  };
 
   const getVerificationStatusIcon = (status: string) => {
     switch (status) {
@@ -224,41 +253,40 @@ const KeySupplierCards: React.FC<KeySupplierCardsProps> = ({
             }}>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Tooltip title="Contact Supplier">
-                  <IconButton
-                    size="small"
-                    onClick={() => onContactSupplier(supplier)}
-                    sx={{ color: theme.palette.primary.main }}
+                  <IconButton 
+                    size="small" 
+                    color="primary"
+                    onClick={() => handleContactSupplier(supplier)}
+                    sx={{ mr: 1 }}
                   >
                     <EmailIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="Create Order">
-                  <IconButton
-                    size="small"
-                    onClick={() => onCreateOrder(supplier)}
-                    sx={{ color: theme.palette.info.main }}
+                  <IconButton 
+                    size="small" 
+                    color="primary"
+                    onClick={() => handleCreateOrder(supplier)}
+                    sx={{ mr: 1 }}
                   >
                     <ShoppingCartIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="Make Payment">
-                  <IconButton
-                    size="small"
-                    onClick={() => onPaySupplier(supplier)}
-                    sx={{ color: theme.palette.success.main }}
-                    disabled={!(supplier.shellTokenEnabled || (supplier.smartContract?.autoPaymentEnabled))}
+                  <IconButton 
+                    size="small" 
+                    color="primary"
+                    onClick={() => handlePaySupplier(supplier)}
                   >
                     <AccountBalanceWalletIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               </Box>
-              
               <Button
                 variant="text"
-                size="small"
                 endIcon={<ArrowForwardIcon />}
-                onClick={() => onViewDetails(supplier)}
-                sx={{ fontWeight: 'medium' }}
+                onClick={() => handleViewDetails(supplier)}
+                sx={{ mt: 1 }}
               >
                 View Details
               </Button>

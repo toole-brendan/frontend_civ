@@ -146,11 +146,11 @@ const SupplierProfileSummary: React.FC<SupplierProfileSummaryProps> = ({
       </Box>
 
       {/* Primary contacts */}
-      <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 1 }}>
+      <Typography variant="h6" gutterBottom>
         Primary Contacts
       </Typography>
       
-      {supplier.primaryContacts.map((contact: Contact) => (
+      {supplier.primaryContacts?.map((contact: Contact) => (
         <Box key={contact.id} sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
           <Badge
             overlap="circular"
@@ -161,19 +161,19 @@ const SupplierProfileSummary: React.FC<SupplierProfileSummaryProps> = ({
               </Tooltip>
             }
           >
-            <Avatar 
-              src={contact.photo}
-              alt={contact.name}
-              sx={{ width: 40, height: 40, mr: 2 }}
-            />
+            <Avatar src={contact.photo} alt={contact.name} sx={{ width: 56, height: 56 }} />
           </Badge>
-          <Box>
-            <Typography variant="body2" fontWeight="medium">
-              {contact.name}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {contact.role}
-            </Typography>
+          <Box sx={{ ml: 2 }}>
+            <Typography variant="subtitle1">{contact.name}</Typography>
+            <Typography variant="body2" color="text.secondary">{contact.role}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+              <EmailIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
+              <Typography variant="body2">{contact.email}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
+              <PhoneIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
+              <Typography variant="body2">{contact.phone}</Typography>
+            </Box>
           </Box>
         </Box>
       ))}
@@ -255,10 +255,10 @@ const SupplierProfileSummary: React.FC<SupplierProfileSummaryProps> = ({
             secondary={
               <>
                 <Typography variant="caption" display="block">
-                  Weekdays: {supplier.businessHours.weekdays}
+                  Weekdays: {supplier.businessHours?.weekdays || 'N/A'}
                 </Typography>
                 <Typography variant="caption" display="block">
-                  Weekend: {supplier.businessHours.weekend}
+                  Weekend: {supplier.businessHours?.weekend || 'N/A'}
                 </Typography>
               </>
             }
@@ -273,7 +273,7 @@ const SupplierProfileSummary: React.FC<SupplierProfileSummaryProps> = ({
             secondary={
               <Typography variant="caption">
                 {new Date().toLocaleTimeString('en-US', { 
-                  timeZone: supplier.businessHours.timezone.split(' ')[0],
+                  timeZone: supplier.businessHours?.timezone?.split(' ')[0] || 'UTC',
                   hour: 'numeric',
                   minute: 'numeric',
                   hour12: true,
@@ -291,7 +291,7 @@ const SupplierProfileSummary: React.FC<SupplierProfileSummaryProps> = ({
             primary={<Typography variant="body2">Contract Status</Typography>}
             secondary={
               <Typography variant="caption">
-                Expires: {new Date(supplier.contractExpiration).toLocaleDateString()}
+                Expires: {supplier.contractExpiration ? new Date(supplier.contractExpiration).toLocaleDateString() : 'N/A'}
               </Typography>
             }
           />
@@ -316,7 +316,7 @@ const SupplierProfileSummary: React.FC<SupplierProfileSummaryProps> = ({
           Relationship History
         </Typography>
         <Chip 
-          label={`Since ${supplier.relationshipHistory[0]?.date.substring(0, 4) || 'N/A'}`} 
+          label={`Since ${supplier.relationshipHistory?.[0]?.date.substring(0, 4) || 'N/A'}`} 
           size="small" 
           sx={{ 
             height: 20, 
@@ -340,7 +340,7 @@ const SupplierProfileSummary: React.FC<SupplierProfileSummaryProps> = ({
           }} 
         />
         
-        {supplier.relationshipHistory.slice(0, 3).map((event, index) => (
+        {supplier.relationshipHistory?.slice(0, 3).map((event, index) => (
           <Box 
             key={`${event.date}-${index}`}
             sx={{ 
@@ -377,7 +377,7 @@ const SupplierProfileSummary: React.FC<SupplierProfileSummaryProps> = ({
           </Box>
         ))}
         
-        {supplier.relationshipHistory.length > 3 && (
+        {supplier.relationshipHistory && supplier.relationshipHistory.length > 3 && (
           <Button 
             variant="text" 
             size="small" 

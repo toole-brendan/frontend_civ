@@ -584,7 +584,7 @@ const AlertsPage: React.FC = () => {
                 <Grid item xs={12}>
                   <DashboardCard sx={{ height: '100%' }}>
                     {selectedAlert ? (
-                      <AlertDetailPanel alertId={selectedAlert} />
+                      <AlertDetailPanel alert={selectedAlert as unknown as Alert} />
                     ) : (
                       <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
                         <InfoIcon sx={{ fontSize: 48, opacity: 0.5, mb: 2 }} />

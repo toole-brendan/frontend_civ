@@ -34,7 +34,7 @@ const StatusChip: React.FC<StatusChipProps> = ({
       case 'failed':
         return <ErrorIcon fontSize="small" />;
       default:
-        return null;
+        return undefined;
     }
   };
 

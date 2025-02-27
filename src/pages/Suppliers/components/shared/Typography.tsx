@@ -1,8 +1,25 @@
 import React from 'react';
 import { Typography as MuiTypography, TypographyProps as MuiTypographyProps } from '@mui/material';
+import { OverridableStringUnion } from '@mui/types';
+import { Variant } from '@mui/material/styles/createTypography';
+import { TypographyPropsVariantOverrides } from '@mui/material/Typography';
 
-interface TypographyProps extends MuiTypographyProps {
-  variant?: 'pageTitle' | 'sectionHeader' | 'cardTitle' | 'dataLabel' | 'dataValue' | 'supportingText' | MuiTypographyProps['variant'];
+// Define our custom variants
+interface CustomTypographyPropsVariantOverrides extends TypographyPropsVariantOverrides {
+  pageTitle: true;
+  sectionHeader: true;
+  cardTitle: true;
+  dataLabel: true;
+  dataValue: true;
+  supportingText: true;
+}
+
+// Extend the MuiTypographyProps with our custom variant
+interface TypographyProps extends Omit<MuiTypographyProps, 'variant'> {
+  variant?: OverridableStringUnion<
+    Variant | 'inherit',
+    CustomTypographyPropsVariantOverrides
+  >;
 }
 
 const Typography: React.FC<TypographyProps> = ({ variant, children, ...props }) => {

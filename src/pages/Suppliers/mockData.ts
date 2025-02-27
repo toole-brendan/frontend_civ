@@ -178,7 +178,7 @@ export const mockSuppliers: Supplier[] = [
       annualSavings: 7500,
       creationDate: "2023-01-15",
       expirationDate: "2024-01-15",
-      lastUpdated: "2023-10-15",
+      lastUpdated: "2023-10-01",
       paymentHistory: [
         {
           date: "2023-09-15",
@@ -191,7 +191,28 @@ export const mockSuppliers: Supplier[] = [
           status: "COMPLETED"
         }
       ],
-      disputeResolution: "Arbitration"
+      disputeResolution: "ARBITRATION",
+      nextAutoPaymentDate: "2023-11-15",
+      savingsPercentage: 5.2,
+      shellTokenEnabled: true,
+      shellTokenBalance: 15000,
+      shellTokenRate: 1.05,
+      nextPaymentAmount: 25000
+    },
+    riskAssessment: {
+      geographicRisk: 1.5,
+      financialStability: 'STRONG',
+      singleSourceComponents: 2,
+      disruptionHistory: [],
+      geopoliticalRisk: 'LOW',
+      alternativeSuppliers: [
+        {
+          componentCategory: 'Electronics',
+          supplierCount: 3,
+          readinessLevel: 'READY'
+        }
+      ],
+      resilienceScore: 92
     }
   },
   {
@@ -275,7 +296,35 @@ export const mockSuppliers: Supplier[] = [
       expirationDate: "2024-12-01",
       lastUpdated: "2023-12-01",
       paymentHistory: [],
-      disputeResolution: "Mediation"
+      disputeResolution: "Mediation",
+      nextAutoPaymentDate: "2024-01-15",
+      savingsPercentage: 0,
+      shellTokenEnabled: false,
+      shellTokenBalance: 0,
+      shellTokenRate: 1.0,
+      nextPaymentAmount: 20000
+    },
+    riskAssessment: {
+      geographicRisk: 2.8,
+      financialStability: 'STABLE',
+      singleSourceComponents: 5,
+      disruptionHistory: [
+        {
+          date: "2023-05-10",
+          description: "Supply chain disruption due to regional flooding",
+          impact: "MEDIUM",
+          duration: 14
+        }
+      ],
+      geopoliticalRisk: 'MEDIUM',
+      alternativeSuppliers: [
+        {
+          componentCategory: 'Mechanical Components',
+          supplierCount: 2,
+          readinessLevel: 'IN_DEVELOPMENT'
+        }
+      ],
+      resilienceScore: 75
     }
   },
   {
@@ -396,12 +445,33 @@ export const mockSuppliers: Supplier[] = [
           status: "COMPLETED"
         }
       ],
-      disputeResolution: "Arbitration"
+      disputeResolution: "Arbitration",
+      nextAutoPaymentDate: "2024-01-10",
+      savingsPercentage: 4.0,
+      shellTokenEnabled: true,
+      shellTokenBalance: 25000,
+      shellTokenRate: 1.1,
+      nextPaymentAmount: 45000
+    },
+    riskAssessment: {
+      geographicRisk: 1.2,
+      financialStability: 'STRONG',
+      singleSourceComponents: 1,
+      disruptionHistory: [],
+      geopoliticalRisk: 'LOW',
+      alternativeSuppliers: [
+        {
+          componentCategory: 'Automotive Electronics',
+          supplierCount: 4,
+          readinessLevel: 'READY'
+        }
+      ],
+      resilienceScore: 95
     }
   },
   {
     id: 'supplier-004',
-    name: 'Malaysia Circuit Systems',
+    name: 'Quantum Circuits Inc.',
     contactInfo: {
       email: 'contact@malaysiacircuit.com',
       phone: '+60-4-555-1234',
@@ -470,7 +540,16 @@ export const mockSuppliers: Supplier[] = [
         correctiveAction: 'Retraining of soldering personnel and updated QC procedures'
       }
     ],
-    smartContract: undefined
+    smartContract: undefined,
+    riskAssessment: {
+      geographicRisk: 2.1,
+      financialStability: 'STABLE',
+      singleSourceComponents: 3,
+      disruptionHistory: [],
+      geopoliticalRisk: 'LOW',
+      alternativeSuppliers: [],
+      resilienceScore: 85
+    }
   },
   {
     id: 'supplier-005',
@@ -567,7 +646,35 @@ export const mockSuppliers: Supplier[] = [
           status: 'COMPLETED'
         }
       ],
-      disputeResolution: 'Arbitration'
+      disputeResolution: 'Arbitration',
+      nextAutoPaymentDate: '2024-04-28',
+      savingsPercentage: 2.0,
+      shellTokenEnabled: true,
+      shellTokenBalance: 10000,
+      shellTokenRate: 1.05,
+      nextPaymentAmount: 320000
+    },
+    riskAssessment: {
+      geographicRisk: 3.5,
+      financialStability: 'STABLE',
+      singleSourceComponents: 4,
+      disruptionHistory: [
+        {
+          date: '2023-08-15',
+          description: 'Production delay due to power outages',
+          impact: 'MEDIUM',
+          duration: 7
+        }
+      ],
+      geopoliticalRisk: 'MEDIUM',
+      alternativeSuppliers: [
+        {
+          componentCategory: 'Display Components',
+          supplierCount: 3,
+          readinessLevel: 'IN_DEVELOPMENT'
+        }
+      ],
+      resilienceScore: 78
     }
   },
 ];

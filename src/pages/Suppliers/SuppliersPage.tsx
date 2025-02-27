@@ -415,11 +415,11 @@ const SuppliersPage: React.FC = () => {
             <CardContent>
               {viewMode === 'table' && (
                 <SupplierTable 
-                  suppliers={extendedSuppliers}
-                  onViewDetails={handleSupplierSelect}
-                  onContactSupplier={handleContactSupplier}
-                  onCreateOrder={handleCreateOrder}
-                  onPaySupplier={handleMakePayment}
+                  suppliers={extendedSuppliers as any[]}
+                  onViewDetails={(supplier) => handleSupplierSelect(supplier.id)}
+                  onContactSupplier={(supplier) => handleContactSupplier(supplier as any)}
+                  onCreateOrder={(supplier) => handleCreateOrder(supplier as any)}
+                  onPaySupplier={(supplier) => handleMakePayment(supplier as any)}
                   onExpandRow={(supplierId) => setSelectedSupplierId(supplierId)}
                   expandedSupplierId={selectedSupplierId}
                 />
@@ -537,9 +537,26 @@ const SuppliersPage: React.FC = () => {
           qualityMetrics={{
             ...mockQualityMetrics,
             averageFailureRate: mockQualityMetrics.failureRate || 0,
-            failureRateTrend: mockQualityMetrics.failureRateTrend || [],
-            rmaTrend: mockQualityMetrics.rmaTrend || [],
-            mtbfTrend: mockQualityMetrics.mtbfTrend || [],
+            failureRateTrend: mockQualityMetrics.failureRateTrend || [] as any,
+            rmaTrend: mockQualityMetrics.rmaTrend || [] as any,
+            mtbfTrend: mockQualityMetrics.mtbfTrend || [] as any,
+            industryMtbfAverage: 10000,
+            componentCategories: [
+              { name: 'Default Category', acceptanceRate: 95, defectRate: 5, trend: 'stable' }
+            ],
+            failureRateByCategory: mockQualityMetrics.failureRateByCategory || [
+              { category: 'Default Category', rate: 2.5 }
+            ],
+            qualityTrend: mockQualityMetrics.qualityTrend ? 
+              mockQualityMetrics.qualityTrend.map((item: any) => ({
+                date: item.month || 'Jan 2023',
+                rate: item.defectRate || 0
+              })) : 
+              [
+                { date: 'Jan 2023', rate: 2.1 },
+                { date: 'Feb 2023', rate: 1.9 },
+                { date: 'Mar 2023', rate: 1.7 }
+              ]
           }}
           onViewIncident={handleViewIncident}
           onViewAllMetrics={handleViewAllMetrics}

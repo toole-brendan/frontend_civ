@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -74,7 +74,7 @@ const TableToolbar = styled(Box)(({ theme }) => ({
 }));
 
 // Types
-interface Column<T> {
+export interface Column<T> {
   id: keyof T | 'actions';
   label: string;
   numeric?: boolean;

@@ -29,8 +29,13 @@ const getStatusColor = (status: TransferStatus): string => {
     COMPLETED: '#4caf50',
     AWAITING_APPROVAL: '#2196f3',
     REJECTED: '#f44336',
+    SCHEDULED: '#9c27b0',
+    IN_PREPARATION: '#ff9800',
+    IN_TRANSIT: '#2196f3',
+    IN_CUSTOMS: '#ff5722',
+    QUALITY_CHECK: '#673ab7'
   };
-  return statusColors[status];
+  return statusColors[status] || '#9e9e9e'; // Default gray color if status not found
 };
 
 const TransferDetailsModal: React.FC<TransferDetailsModalProps> = ({

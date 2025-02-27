@@ -72,6 +72,12 @@ import { FixedSizeList as VirtualizedList } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 
 import { DataTable, StatusChip, VerificationBadge, PerformanceBadge } from './shared';
+import type { Column as BaseColumn } from './shared/DataTable';
+
+// Extend the Column type to include 'select'
+type Column<T> = Omit<BaseColumn<T>, 'id'> & {
+  id: keyof T | 'actions' | 'select';
+};
 
 // Define additional properties that are used in the table but not in the Supplier type
 interface ExtendedSupplier extends Omit<Supplier, 'contactInfo' | 'metrics'> {
@@ -99,7 +105,7 @@ interface ExtendedSupplier extends Omit<Supplier, 'contactInfo' | 'metrics'> {
   contactName?: string;
   email?: string;
   phone?: string;
-  status?: string;
+  status: string;
 }
 
 interface HeadCell {
@@ -253,6 +259,11 @@ const SupplierTable: React.FC<SupplierTableProps> = ({
 
   const handleColumnMenuClose = () => {
     setColumnMenuAnchorEl(null);
+  };
+
+  const handleToggleFilters = () => {
+    console.log('Toggle filters');
+    // Implement filter toggle logic here
   };
 
   const handleBulkExport = () => {
@@ -894,14 +905,20 @@ const SupplierTable: React.FC<SupplierTableProps> = ({
   };
 
   // Add the missing getStatusColor function
-  const getStatusColor = (status: string): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
-    switch (status) {
-      case 'Active':
+  const getStatusColor = (status: string | undefined): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
+    if (!status) return "default";
+    
+    switch (status.toUpperCase()) {
+      case 'ACTIVE':
         return 'success';
-      case 'Inactive':
-        return 'error';
-      case 'Pending':
+      case 'PENDING':
         return 'warning';
+      case 'INACTIVE':
+        return 'error';
+      case 'ONBOARDING':
+        return 'info';
+      case 'SUSPENDED':
+        return 'error';
       default:
         return 'default';
     }
@@ -920,20 +937,17 @@ const SupplierTable: React.FC<SupplierTableProps> = ({
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <DataTable
         columns={headCells.filter(cell => cell.visible).map(cell => ({
-          id: cell.id,
-          label: cell.label,
-          sortable: cell.sortable,
-          width: cell.width,
-          align: cell.align,
-          format: (value: any) => renderCellContent(suppliers[0], cell.id as keyof ExtendedSupplier)
+          ...cell,
+          id: cell.id === 'select' ? 'actions' : cell.id,
         }))}
         data={suppliers}
         keyField="id"
         title="Suppliers"
         selectable
+        onSelectionChange={(selectedIds) => setSelected(selectedIds.map(id => String(id)))}
+        onRowClick={(supplier) => onViewDetails(supplier)}
         loading={isLoading}
-        onSelectionChange={setSelected}
-        onRowClick={(supplier) => onExpandRow(supplier.id)}
+        emptyMessage="No suppliers found"
         toolbarActions={
           <>
             <Button
@@ -948,9 +962,7 @@ const SupplierTable: React.FC<SupplierTableProps> = ({
         }
         showColumnToggle
         showFilter
-        emptyMessage="No suppliers found"
-        initialSortBy="name"
-        initialSortDirection="asc"
+        onFilterClick={handleToggleFilters}
       />
       
       {/* Saved Views Menu */}

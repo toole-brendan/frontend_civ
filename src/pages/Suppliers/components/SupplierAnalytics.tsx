@@ -136,11 +136,13 @@ const SupplierAnalytics: React.FC<SupplierAnalyticsProps> = ({
   };
 
   // Calculate total annual spend
-  const totalAnnualSpend = suppliers.reduce((total, supplier) => total + supplier.annualSpend, 0);
+  const totalAnnualSpend = suppliers.reduce((total, supplier) => 
+    total + (supplier.annualSpend || supplier.financials?.annualSpend || 0), 0);
   
   // Calculate average performance score
   const averagePerformance = suppliers.length > 0 
-    ? suppliers.reduce((total, supplier) => total + supplier.performanceScore, 0) / suppliers.length
+    ? suppliers.reduce((total, supplier) => 
+        total + (supplier.performance?.overall || 0), 0) / suppliers.length
     : 0;
   
   // Calculate count of high-risk suppliers

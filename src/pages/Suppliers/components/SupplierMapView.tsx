@@ -133,12 +133,25 @@ const SupplierMapView: React.FC<SupplierMapViewProps> = ({
     setMapView(event.target.value);
   };
 
+  // Helper function to check if a supplier is in a country
+  const isSupplierInCountry = (supplier: Supplier, country: string): boolean => {
+    if (!supplier.location) return false;
+    
+    // Check if includes method exists
+    if (supplier.location.includes) {
+      return supplier.location.includes(country);
+    }
+    
+    // Fallback to checking country property
+    return supplier.location.country === country;
+  };
+
   // Group suppliers by region (in a real app this would use geolocation data)
   const regions = {
-    asia: suppliers.filter(s => ['Japan', 'South Korea', 'Malaysia', 'Taiwan', 'China'].some(c => s.location.includes(c))).length,
-    europe: suppliers.filter(s => ['Germany', 'France', 'UK', 'Italy', 'Spain'].some(c => s.location.includes(c))).length,
-    americas: suppliers.filter(s => ['USA', 'Canada', 'Mexico', 'Brazil'].some(c => s.location.includes(c))).length,
-    other: suppliers.filter(s => !['Japan', 'South Korea', 'Malaysia', 'Taiwan', 'China', 'Germany', 'France', 'UK', 'Italy', 'Spain', 'USA', 'Canada', 'Mexico', 'Brazil'].some(c => s.location.includes(c))).length,
+    asia: suppliers.filter(s => ['Japan', 'South Korea', 'Malaysia', 'Taiwan', 'China'].some(c => isSupplierInCountry(s, c))).length,
+    europe: suppliers.filter(s => ['Germany', 'France', 'UK', 'Italy', 'Spain'].some(c => isSupplierInCountry(s, c))).length,
+    americas: suppliers.filter(s => ['USA', 'Canada', 'Mexico', 'Brazil'].some(c => isSupplierInCountry(s, c))).length,
+    other: suppliers.filter(s => !['Japan', 'South Korea', 'Malaysia', 'Taiwan', 'China', 'Germany', 'France', 'UK', 'Italy', 'Spain', 'USA', 'Canada', 'Mexico', 'Brazil'].some(c => isSupplierInCountry(s, c))).length,
   };
 
   return (

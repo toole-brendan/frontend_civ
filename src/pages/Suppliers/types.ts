@@ -6,6 +6,7 @@ export interface Location {
   country: string;
   region: string;
   rank?: string;
+  includes?: (value: string) => boolean;
 }
 
 export type Certification = string;
@@ -54,6 +55,21 @@ export interface Supplier {
   sustainabilityScore: number;
   qualityIncidents: QualityIncident[];
   smartContract?: SmartContract;
+  riskAssessment: RiskAssessment;
+  metrics?: SupplierMetrics;
+  annualSpend?: number;
+  categories?: string[];
+  financials?: {
+    annualSpend: number;
+    [key: string]: any;
+  };
+  logo?: string;
+  headquarters?: string;
+  primaryContacts?: Contact[];
+  businessHours?: BusinessHours;
+  contractExpiration?: string;
+  relationshipHistory?: RelationshipEvent[];
+  blockchainVerificationStatus?: string;
 }
 
 export interface Contact {
@@ -179,6 +195,12 @@ export interface SmartContract {
     status: string;
   }[];
   disputeResolution: string;
+  nextAutoPaymentDate: string;
+  savingsPercentage: number;
+  shellTokenEnabled: boolean;
+  shellTokenBalance: number;
+  shellTokenRate: number;
+  nextPaymentAmount: number;
 }
 
 export interface SupplierMetrics {
@@ -196,6 +218,21 @@ export interface SupplierMetrics {
   smartContractCount: number;
   annualSavings: number;
   averagePerformance: number;
+  qualityAcceptance?: {
+    rate: number;
+    previousRate: number;
+    industryAverage: number;
+  };
+  priceCompetitiveness?: {
+    score: number;
+    previousScore: number;
+    industryAverage: number;
+  };
+  documentationAccuracy?: {
+    rate: number;
+    previousRate: number;
+    industryAverage: number;
+  };
 }
 
 export interface SupplierOrderStatus {
@@ -241,4 +278,14 @@ export interface ExtendedQualityMetrics {
   }[];
   certifications: string[];
   complianceScore: number;
+  industryMtbfAverage?: number;
+  componentCategories?: string[];
+  failureRateByCategory?: {
+    category: string;
+    rate: number;
+  }[];
+  failureRate?: number;
+  failureRateTrend?: any[];
+  rmaTrend?: any[];
+  mtbfTrend?: any[];
 } 

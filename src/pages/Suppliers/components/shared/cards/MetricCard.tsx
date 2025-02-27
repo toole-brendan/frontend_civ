@@ -50,12 +50,12 @@ const MetricCard: React.FC<MetricCardProps> = ({
   
   const getColorShade = (color: string) => {
     switch (color) {
-      case 'primary': return theme.palette.primary.lighter;
-      case 'success': return theme.palette.success.lighter;
-      case 'warning': return theme.palette.warning.lighter;
-      case 'error': return theme.palette.error.lighter;
-      case 'info': return theme.palette.info.lighter;
-      default: return theme.palette.primary.lighter;
+      case 'primary': return theme.palette.primary.light;
+      case 'success': return theme.palette.success.light;
+      case 'warning': return theme.palette.warning.light;
+      case 'error': return theme.palette.error.light;
+      case 'info': return theme.palette.info.light;
+      default: return theme.palette.primary.light;
     }
   };
   
@@ -63,7 +63,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
     switch (direction) {
       case 'up': return <ArrowUpwardIcon fontSize="small" />;
       case 'down': return <ArrowDownwardIcon fontSize="small" />;
-      default: return null;
+      default: return undefined;
     }
   };
   
