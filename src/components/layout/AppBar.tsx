@@ -28,13 +28,11 @@ const StyledAppBar = styled(MuiAppBar)(({ theme }) => ({
 export interface AppBarProps {
   isMobile: boolean;
   onDrawerToggle: () => void;
-  userDisplayName: string;
 }
 
 export const AppBar: React.FC<AppBarProps> = ({
   isMobile,
   onDrawerToggle,
-  userDisplayName,
 }) => {
   return (
     <StyledAppBar
@@ -51,7 +49,6 @@ export const AppBar: React.FC<AppBarProps> = ({
       <AppBarContent
         isMobile={isMobile}
         onDrawerToggle={onDrawerToggle}
-        userDisplayName={userDisplayName}
       />
     </StyledAppBar>
   );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Paper,
@@ -21,18 +21,61 @@ import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
-import { InventoryRecommendation } from '../types';
+import { InventoryRecommendation, TechComponentsInventoryItem } from '../types';
 
 interface InventoryInsightsProps {
-  recommendations: InventoryRecommendation[];
-  onActionClick: (action: string, itemId: string) => void;
+  items: TechComponentsInventoryItem[];
+  onActionClick?: (actionType: string, itemId: string) => void;
 }
 
-export const InventoryInsights: React.FC<InventoryInsightsProps> = ({
-  recommendations,
-  onActionClick
+export const InventoryInsights: React.FC<InventoryInsightsProps> = ({ 
+  items,
+  onActionClick = () => {} 
 }) => {
   const theme = useTheme();
+  
+  // Generate recommendations based on items
+  const recommendations = useMemo(() => {
+    const result: InventoryRecommendation[] = [];
+    
+    // Add reorder recommendations for low stock items
+    items.forEach(item => {
+      if (item.currentStock <= item.reorderPoint) {
+        result.push({
+          id: `reorder-${item.id}`,
+          type: 'reorder',
+          item: {
+            id: item.id,
+            sku: item.sku,
+            name: item.name
+          },
+          description: `Stock level (${item.currentStock}) is below reorder point (${item.reorderPoint})`,
+          impact: `Lead time: ${item.leadTime} days`,
+          suggestedAction: 'Place order immediately'
+        });
+      }
+      
+      // Add excess inventory recommendations
+      if (item.currentStock > item.maxLevel * 1.2) {
+        result.push({
+          id: `excess-${item.id}`,
+          type: 'excess',
+          item: {
+            id: item.id,
+            sku: item.sku,
+            name: item.name
+          },
+          description: `Stock level (${item.currentStock}) is significantly above maximum (${item.maxLevel})`,
+          impact: `Excess inventory value: $${((item.currentStock - item.maxLevel) * item.unitCost).toFixed(2)}`,
+          potentialSavings: Number(((item.currentStock - item.maxLevel) * item.unitCost).toFixed(2)),
+          suggestedAction: 'Consider transferring to another location'
+        });
+      }
+    });
+    
+    // Return top 5 recommendations
+    return result.slice(0, 5);
+  }, [items]);
 
   const getIconForType = (type: string) => {
     switch (type) {
@@ -174,67 +217,76 @@ export const InventoryInsights: React.FC<InventoryInsightsProps> = ({
       </Box>
       
       <List sx={{ overflow: 'auto', flexGrow: 1, p: 0 }}>
-        {recommendations.map((recommendation, index) => {
-          const chipColor = getChipColor(recommendation.type);
-          
-          return (
-            <React.Fragment key={recommendation.id}>
-              {index > 0 && <Divider />}
-              <ListItem 
-                alignItems="flex-start" 
-                sx={{ 
-                  py: 2,
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.04)
-                  }
-                }}
-              >
-                <ListItemIcon sx={{ mt: 0 }}>
-                  {getIconForType(recommendation.type)}
-                </ListItemIcon>
-                <ListItemText
-                  primary={
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                      <Typography variant="subtitle2" component="span">
-                        {getTitle(recommendation)}
-                      </Typography>
-                      <Chip 
-                        label={getTypeLabel(recommendation.type)} 
-                        size="small"
-                        sx={{ 
-                          backgroundColor: chipColor.bg,
-                          color: chipColor.color,
-                          fontWeight: 'medium',
-                          fontSize: '0.7rem'
-                        }}
-                      />
-                    </Box>
-                  }
-                  secondary={
-                    <Box>
-                      <Typography variant="body2" color="text.primary" sx={{ mb: 1 }}>
-                        {recommendation.description}
-                      </Typography>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                        <Typography variant="caption" color="text.secondary">
-                          {recommendation.impact}
-                          {recommendation.potentialSavings && (
-                            <span> | Potential savings: ${recommendation.potentialSavings.toLocaleString()}</span>
-                          )}
-                          {recommendation.riskLevel && (
-                            <span> | Risk: {recommendation.riskLevel}</span>
-                          )}
+        {recommendations.length > 0 ? (
+          recommendations.map((recommendation, index) => {
+            const chipColor = getChipColor(recommendation.type);
+            
+            return (
+              <React.Fragment key={recommendation.id}>
+                {index > 0 && <Divider />}
+                <ListItem 
+                  alignItems="flex-start" 
+                  sx={{ 
+                    py: 2,
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.04)
+                    }
+                  }}
+                >
+                  <ListItemIcon sx={{ mt: 0 }}>
+                    {getIconForType(recommendation.type)}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                        <Typography variant="subtitle2" component="span">
+                          {getTitle(recommendation)}
                         </Typography>
-                        {getActionButton(recommendation)}
+                        <Chip 
+                          label={getTypeLabel(recommendation.type)} 
+                          size="small"
+                          sx={{ 
+                            backgroundColor: chipColor.bg,
+                            color: chipColor.color,
+                            fontWeight: 'medium',
+                            fontSize: '0.7rem'
+                          }}
+                        />
                       </Box>
-                    </Box>
-                  }
-                  secondaryTypographyProps={{ component: 'div' }}
-                />
-              </ListItem>
-            </React.Fragment>
-          );
-        })}
+                    }
+                    secondary={
+                      <Box>
+                        <Typography variant="body2" color="text.primary" sx={{ mb: 1 }}>
+                          {recommendation.description}
+                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {recommendation.impact}
+                            {recommendation.potentialSavings && (
+                              <span> | Potential savings: ${recommendation.potentialSavings.toLocaleString()}</span>
+                            )}
+                            {recommendation.riskLevel && (
+                              <span> | Risk: {recommendation.riskLevel}</span>
+                            )}
+                          </Typography>
+                          {getActionButton(recommendation)}
+                        </Box>
+                      </Box>
+                    }
+                    secondaryTypographyProps={{ component: 'div' }}
+                  />
+                </ListItem>
+              </React.Fragment>
+            );
+          })
+        ) : (
+          <ListItem>
+            <ListItemText 
+              primary="No recommendations available"
+              secondary="All inventory items are within optimal levels"
+            />
+          </ListItem>
+        )}
       </List>
       
       <Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}`, textAlign: 'center' }}>

@@ -51,15 +51,19 @@ const Content = styled(Box)(({ theme }) => ({
 }));
 
 interface WarehouseSelectorProps {
-  warehouses: WarehouseStructure[];
-  onLocationSelect: (locationPath: string[]) => void;
+  warehouses?: WarehouseStructure[];
+  onLocationSelect?: (locationPath: string[]) => void;
   selectedPath?: string[];
+  selectedWarehouse: string;
+  onChange: (warehouseId: string) => void;
 }
 
 export const WarehouseSelector: React.FC<WarehouseSelectorProps> = ({
-  warehouses,
-  onLocationSelect,
+  warehouses = [],
+  onLocationSelect = () => {},
   selectedPath = [],
+  selectedWarehouse,
+  onChange
 }) => {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [currentPath, setCurrentPath] = useState<string[]>(selectedPath);
@@ -178,7 +182,7 @@ export const WarehouseSelector: React.FC<WarehouseSelectorProps> = ({
   // Find breadcrumb names for the current path
   const getBreadcrumbNames = () => {
     const breadcrumbs: string[] = [];
-    let currentItems = warehouses;
+    let currentItems = warehouses || [];
     
     for (const itemId of currentPath) {
       const item = currentItems.find(i => i.id === itemId);

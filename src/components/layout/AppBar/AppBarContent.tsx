@@ -5,29 +5,20 @@ import {
   IconButton,
   InputBase,
   Badge,
-  Menu,
-  MenuItem,
-  Divider,
-  ListItemIcon,
-  ListItemText,
   Typography,
-  Avatar,
   Box,
   styled,
   Theme,
   Tooltip,
+  Avatar,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Notifications as NotificationsIcon,
-  AccountCircle,
-  Settings as SettingsIcon,
-  KeyboardArrowDown as ArrowDownIcon,
-  Menu as MenuIcon,
   Brightness4 as DarkModeIcon,
   Brightness7 as LightModeIcon,
+  Menu as MenuIcon,
 } from '@mui/icons-material';
-import { icons } from '../../../app/routes';
 import { useTheme } from '../../../theme/ThemeContext';
 
 const DRAWER_WIDTH = 240;
@@ -106,68 +97,6 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-const UserInfo = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: theme.spacing(1),
-  padding: theme.spacing(0.5, 1),
-  cursor: 'pointer',
-  borderRadius: 0,
-  backgroundColor: theme.palette.mode === 'dark' 
-    ? 'rgba(255, 255, 255, 0.03)' 
-    : 'rgba(0, 0, 0, 0.03)',
-  backdropFilter: 'blur(12px)',
-  border: `1px solid ${theme.palette.mode === 'dark' 
-    ? 'rgba(255, 255, 255, 0.1)' 
-    : 'rgba(0, 0, 0, 0.1)'}`,
-  transition: theme.transitions.create(
-    ['background-color', 'transform', 'box-shadow'],
-    {
-      duration: theme.transitions.duration.shorter,
-      easing: theme.transitions.easing.easeInOut,
-    }
-  ),
-  '&:hover': {
-    backgroundColor: theme.palette.mode === 'dark' 
-      ? 'rgba(255, 255, 255, 0.05)' 
-      : 'rgba(0, 0, 0, 0.05)',
-    transform: 'translateY(-1px)',
-    boxShadow: theme.palette.mode === 'dark'
-      ? '0 2px 4px rgba(0, 0, 0, 0.5)'
-      : '0 2px 4px rgba(0, 0, 0, 0.2)',
-  },
-}));
-
-const StyledMenu = styled(Menu)(({ theme }) => ({
-  '& .MuiPaper-root': {
-    backgroundColor: theme.palette.mode === 'dark' ? '#000000' : '#FFFFFF',
-    backdropFilter: 'blur(12px)',
-    border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
-    borderRadius: 0,
-    boxShadow: theme.palette.mode === 'dark' ? '0 4px 8px rgba(0, 0, 0, 0.5)' : '0 4px 8px rgba(0, 0, 0, 0.1)',
-    '& .MuiMenuItem-root': {
-      transition: theme.transitions.create(
-        ['background-color', 'color'],
-        {
-          duration: theme.transitions.duration.shorter,
-          easing: theme.transitions.easing.easeInOut,
-        }
-      ),
-      '&:hover': {
-        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
-      },
-    },
-  },
-}));
-
-const StyledBadge = styled(Badge)(() => ({
-  '& .MuiBadge-badge': {
-    backgroundColor: '#FF3B3B',
-    color: '#FFFFFF',
-    boxShadow: '0 0 0 2px #000000',
-  },
-}));
-
 const LogoContainer = styled(Box)(({ theme }: { theme: Theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -195,19 +124,63 @@ const LogoBox = styled(Box)(({ theme }: { theme: Theme }) => ({
   },
 }));
 
+const StyledBadge = styled(Badge)(() => ({
+  '& .MuiBadge-badge': {
+    backgroundColor: '#FF3B3B',
+    color: '#FFFFFF',
+    boxShadow: '0 0 0 2px #000000',
+  },
+}));
+
+// Mock data for user
+const mockUser = {
+  name: 'Michael Chen',
+  role: 'Operations Director',
+  company: 'TechComponents International',
+  avatar: '',
+};
+
+const UserInfo = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+  padding: theme.spacing(0.5, 1),
+  borderRadius: 0,
+  backgroundColor: theme.palette.mode === 'dark' 
+    ? 'rgba(255, 255, 255, 0.03)' 
+    : 'rgba(0, 0, 0, 0.03)',
+  backdropFilter: 'blur(12px)',
+  border: `1px solid ${theme.palette.mode === 'dark' 
+    ? 'rgba(255, 255, 255, 0.1)' 
+    : 'rgba(0, 0, 0, 0.1)'}`,
+  transition: theme.transitions.create(
+    ['background-color', 'transform', 'box-shadow'],
+    {
+      duration: theme.transitions.duration.shorter,
+      easing: theme.transitions.easing.easeInOut,
+    }
+  ),
+  '&:hover': {
+    backgroundColor: theme.palette.mode === 'dark' 
+      ? 'rgba(255, 255, 255, 0.05)' 
+      : 'rgba(0, 0, 0, 0.05)',
+    transform: 'translateY(-1px)',
+    boxShadow: theme.palette.mode === 'dark'
+      ? '0 2px 4px rgba(0, 0, 0, 0.5)'
+      : '0 2px 4px rgba(0, 0, 0, 0.2)',
+  },
+}));
+
 interface AppBarContentProps {
   isMobile: boolean;
   onDrawerToggle: () => void;
-  userDisplayName: string;
 }
 
 export const AppBarContent: React.FC<AppBarContentProps> = ({
   isMobile,
   onDrawerToggle,
-  userDisplayName,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const { mode, toggleTheme } = useTheme();
 
@@ -216,21 +189,8 @@ export const AppBarContent: React.FC<AppBarContentProps> = ({
     console.log('Searching for:', searchQuery);
   };
 
-  const handleLogout = () => {
-    setAnchorEl(null);
-    navigate('/login');
-  };
-
   const handleLogoClick = () => {
     navigate('/defense/dashboard');
-  };
-
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
   };
 
   return (
@@ -283,11 +243,15 @@ export const AppBarContent: React.FC<AppBarContentProps> = ({
       <Tooltip title={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`}>
         <IconButton
           onClick={toggleTheme}
-          color="inherit"
           sx={{
             mr: 1,
+            color: mode === 'dark' 
+              ? 'rgba(255, 255, 255, 0.9)' 
+              : 'rgba(0, 0, 0, 0.7)',
             '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backgroundColor: mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.05)'
+                : 'rgba(0, 0, 0, 0.05)',
             },
           }}
         >
@@ -303,6 +267,7 @@ export const AppBarContent: React.FC<AppBarContentProps> = ({
           '&:hover': {
             backgroundColor: 'rgba(255, 255, 255, 0.05)',
           },
+          mr: 1,
         }}
       >
         <StyledBadge badgeContent={3} color="error">
@@ -310,15 +275,17 @@ export const AppBarContent: React.FC<AppBarContentProps> = ({
         </StyledBadge>
       </IconButton>
 
-      <UserInfo onClick={handleMenuOpen}>
+      <UserInfo>
         <Avatar
+          src={mockUser.avatar}
+          alt={mockUser.name}
           sx={{
             width: 32,
             height: 32,
-            border: (theme) => `1px solid ${theme.palette.divider}`,
+            border: (theme) => `2px solid ${theme.palette.primary.main}`,
           }}
         >
-          {userDisplayName.charAt(0)}
+          {mockUser.name.charAt(0)}
         </Avatar>
         <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
           <Typography
@@ -329,61 +296,20 @@ export const AppBarContent: React.FC<AppBarContentProps> = ({
               color: mode === 'dark' ? '#FFFFFF' : '#000000',
             }}
           >
-            {userDisplayName}
+            {mockUser.name}
           </Typography>
           <Typography
             variant="caption"
             sx={{
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
+              letterSpacing: '0.02em',
               fontSize: '0.7rem',
               color: mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
             }}
           >
-            USER
+            {mockUser.role} • {mockUser.company}
           </Typography>
         </Box>
-        <ArrowDownIcon
-          sx={{
-            fontSize: 20,
-            color: mode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
-            transition: (theme) =>
-              theme.transitions.create('transform', {
-                duration: theme.transitions.duration.shorter,
-              }),
-            transform: Boolean(anchorEl) ? 'rotate(180deg)' : 'none',
-          }}
-        />
       </UserInfo>
-
-      <StyledMenu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        onClick={handleMenuClose}
-        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-      >
-        <MenuItem component={Link} to="/defense/profile">
-          <ListItemIcon>
-            <AccountCircle fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Profile</ListItemText>
-        </MenuItem>
-        <MenuItem component={Link} to="/defense/settings">
-          <ListItemIcon>
-            <SettingsIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Settings</ListItemText>
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={handleLogout}>
-          <ListItemIcon>
-            <icons.LogoutIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Logout</ListItemText>
-        </MenuItem>
-      </StyledMenu>
     </Toolbar>
   );
 };

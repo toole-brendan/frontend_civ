@@ -53,7 +53,7 @@ const mockUser = {
   name: 'Michael Chen',
   role: 'Operations Director',
   company: 'TechComponents International',
-  avatar: '/assets/images/avatars/1.jpg',
+  avatar: '',
 };
 
 interface SidebarProps {
@@ -75,8 +75,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [collapsed, setCollapsed] = useState(false);
-  const [warehousesOpen, setWarehousesOpen] = useState(true);
+  // Initialize collapsed state from localStorage or default to false
+  const [collapsed, setCollapsed] = useState(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    return savedState ? JSON.parse(savedState) : false;
+  });
+  
+  // Initialize warehousesOpen state from localStorage or default to false
+  const [warehousesOpen, setWarehousesOpen] = useState(() => {
+    const savedState = localStorage.getItem('warehousesOpen');
+    return savedState ? JSON.parse(savedState) : false;
+  });
   
   const drawerWidth = collapsed ? 72 : 260;
 
@@ -86,11 +95,15 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const toggleCollapse = () => {
-    setCollapsed(!collapsed);
+    const newState = !collapsed;
+    setCollapsed(newState);
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(newState));
   };
 
   const toggleWarehouses = () => {
-    setWarehousesOpen(!warehousesOpen);
+    const newState = !warehousesOpen;
+    setWarehousesOpen(newState);
+    localStorage.setItem('warehousesOpen', JSON.stringify(newState));
   };
 
   const getStatusColor = (status: string) => {
@@ -254,6 +267,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             duration: theme.transitions.duration.enteringScreen,
           }),
           overflowX: 'hidden',
+          marginTop: { xs: '64px', md: '72px' },
+          height: { xs: 'calc(100% - 64px)', md: 'calc(100% - 72px)' },
+          display: 'flex',
+          flexDirection: 'column',
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -269,77 +286,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         },
       }}
     >
-      {/* User Profile Section */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: collapsed ? 'column' : 'row',
-          alignItems: 'center',
-          padding: collapsed ? 1 : 2,
-          paddingTop: theme.spacing(2),
-          paddingBottom: theme.spacing(2),
-        }}
-      >
-        <Avatar
-          src={mockUser.avatar}
-          alt={mockUser.name}
-          sx={{
-            width: collapsed ? 40 : 48,
-            height: collapsed ? 40 : 48,
-            marginRight: collapsed ? 0 : 2,
-            marginBottom: collapsed ? 1 : 0,
-            border: `2px solid ${theme.palette.primary.main}`,
-          }}
-        />
-        
-        {!collapsed && (
-          <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-            <Typography 
-              variant="subtitle1" 
-              noWrap 
-              sx={{ 
-                color: theme.palette.mode === 'dark' ? 'white' : 'black', 
-                fontWeight: 600 
-              }}
-            >
-              {mockUser.name}
-            </Typography>
-            <Typography 
-              variant="caption" 
-              noWrap 
-              sx={{ 
-                color: theme.palette.mode === 'dark' 
-                  ? 'rgba(255, 255, 255, 0.7)' 
-                  : 'rgba(0, 0, 0, 0.7)' 
-              }}
-            >
-              {mockUser.role} • {mockUser.company}
-            </Typography>
-          </Box>
-        )}
-        
-        <IconButton
-          onClick={toggleCollapse}
-          sx={{
-            color: theme.palette.mode === 'dark' 
-              ? 'rgba(255, 255, 255, 0.7)' 
-              : 'rgba(0, 0, 0, 0.7)',
-            display: { xs: 'none', sm: 'flex' },
-          }}
-        >
-          {collapsed ? <ChevronRight /> : <ChevronLeft />}
-        </IconButton>
-      </Box>
-      
-      <Divider sx={{ backgroundColor: theme.palette.divider }} />
-      
       {/* Main Navigation Items */}
       <Box
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          height: 'calc(100% - 80px)',
-          overflow: 'auto',
+          flexGrow: 1, // Take available space
+          overflow: 'auto', // Enable scrolling for this section
+          minHeight: 0, // Important for flexbox scrolling
+          pt: 2, // Add padding at the top
         }}
       >
         <List sx={{ py: 1 }}>
@@ -417,11 +372,43 @@ const Sidebar: React.FC<SidebarProps> = ({
             </List>
           </Collapse>
         </List>
-        
-        <Box sx={{ flexGrow: 1 }} />
+      </Box>
+      
+      {/* Bottom Actions Section - Fixed at bottom */}
+      <Box sx={{ flexShrink: 0, mt: 'auto' }}>
+        {/* Sidebar Toggle */}
+        <Box sx={{ 
+          justifyContent: 'center', 
+          mb: 2,
+          display: { xs: 'none', sm: 'flex' },
+        }}>
+          <Tooltip title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
+            <IconButton
+              onClick={toggleCollapse}
+              sx={{
+                color: theme.palette.mode === 'dark' 
+                  ? 'rgba(255, 255, 255, 0.7)' 
+                  : 'rgba(0, 0, 0, 0.7)',
+                border: theme.palette.mode === 'dark' 
+                  ? '1px solid rgba(255, 255, 255, 0.2)' 
+                  : '1px solid rgba(0, 0, 0, 0.2)',
+                '&:hover': {
+                  backgroundColor: theme.palette.mode === 'dark' 
+                    ? 'rgba(255, 255, 255, 0.05)' 
+                    : 'rgba(0, 0, 0, 0.05)',
+                },
+              }}
+            >
+              {collapsed ? <ChevronRight /> : <ChevronLeft />}
+            </IconButton>
+          </Tooltip>
+        </Box>
         
         {/* Quick Actions */}
-        <Box sx={{ p: collapsed ? 1 : 2 }}>
+        <Box sx={{ 
+          p: collapsed ? 1 : 2,
+          pt: 0,
+        }}>
           {!collapsed ? (
             <>
               <Button
@@ -455,6 +442,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 startIcon={<ReportIcon />}
                 onClick={() => navigate(ROUTES.GENERATE_REPORT)}
                 sx={{ 
+                  mb: 1,
                   color: theme.palette.mode === 'dark' ? 'white' : 'inherit',
                   borderColor: theme.palette.mode === 'dark' 
                     ? 'rgba(255, 255, 255, 0.3)' 
@@ -512,7 +500,12 @@ const Sidebar: React.FC<SidebarProps> = ({
         </Box>
         
         {/* Logout Button */}
-        <Box sx={{ mt: 2, display: 'flex', justifyContent: collapsed ? 'center' : 'flex-start', px: collapsed ? 0 : 2 }}>
+        <Box sx={{ 
+          pb: 2, 
+          display: 'flex', 
+          justifyContent: collapsed ? 'center' : 'flex-start', 
+          px: collapsed ? 0 : 2,
+        }}>
           <Button
             variant="text"
             color="inherit"

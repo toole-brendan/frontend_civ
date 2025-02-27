@@ -9,424 +9,756 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  Typography,
+  Checkbox,
   IconButton,
   Chip,
-  LinearProgress,
+  Typography,
   Tooltip,
   Menu,
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Badge,
+  CircularProgress,
+  styled,
   Collapse,
+  Button,
+  Grid,
+  Divider,
   useTheme,
-  alpha
+  alpha,
+  ButtonGroup,
+  FormControl,
+  InputLabel,
+  Select,
+  SelectChangeEvent,
 } from '@mui/material';
-import VerifiedIcon from '@mui/icons-material/Verified';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import EditIcon from '@mui/icons-material/Edit';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import QrCodeIcon from '@mui/icons-material/QrCode';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import WarningIcon from '@mui/icons-material/Warning';
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  MoreVert as MoreVertIcon,
+  FileCopy as DuplicateIcon,
+  QrCode as QrCodeIcon,
+  Inventory as InventoryIcon,
+  LocalShipping as ShipIcon,
+  History as HistoryIcon,
+  Warning as WarningIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+  ShoppingCart as ShoppingCartIcon,
+  VerifiedUser as VerifiedUserIcon,
+  FilterList as FilterListIcon,
+  ViewColumn as ViewColumnIcon,
+} from '@mui/icons-material';
 import { TechComponentsInventoryItem } from '../types';
 
-interface TechComponentsInventoryTableProps {
+// Define table props
+export interface TechComponentsInventoryTableProps {
   items: TechComponentsInventoryItem[];
-  onViewDetails: (item: TechComponentsInventoryItem) => void;
-  onEditItem: (item: TechComponentsInventoryItem) => void;
-  onTransferItem: (item: TechComponentsInventoryItem) => void;
-  onOrderItem: (item: TechComponentsInventoryItem) => void;
-  onViewQR: (item: TechComponentsInventoryItem) => void;
+  loading?: boolean;
+  onItemClick: (item: TechComponentsInventoryItem) => void;
+  onEditItem?: (item: TechComponentsInventoryItem) => void;
+  onDeleteItem?: (itemId: string) => void;
+  showBlockchainColumns?: boolean;
 }
 
+// Column preset type
+interface ColumnPreset {
+  id: string;
+  name: string;
+  columns: string[];
+}
+
+// Column definition
+interface ColumnDef {
+  id: keyof TechComponentsInventoryItem | string;
+  label: string;
+  minWidth?: number;
+  align?: 'right' | 'left' | 'center';
+  format?: (value: any, item: TechComponentsInventoryItem) => React.ReactNode;
+}
+
+// Styled components
+const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
+  maxHeight: 650,
+  overflow: 'auto',
+  '&::-webkit-scrollbar': {
+    width: 8,
+    height: 8,
+  },
+  '&::-webkit-scrollbar-track': {
+    backgroundColor: theme.palette.background.default,
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: theme.palette.divider,
+    borderRadius: 4,
+  },
+}));
+
+const StyledTableRow = styled(TableRow)(({ theme }) => ({
+  '&:nth-of-type(odd)': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.02),
+  },
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.05),
+    cursor: 'pointer',
+  },
+}));
+
+interface StatusDotProps {
+  status: string;
+}
+
+const StatusDot = styled('span')<StatusDotProps>(({ theme, status }) => ({
+  display: 'inline-block',
+  width: 10,
+  height: 10,
+  borderRadius: '50%',
+  marginRight: theme.spacing(1),
+  backgroundColor: 
+    status === 'critical' ? theme.palette.error.main :
+    status === 'warning' ? theme.palette.warning.main :
+    status === 'good' ? theme.palette.success.main :
+    theme.palette.grey[400],
+}));
+
+// Main component
 export const TechComponentsInventoryTable: React.FC<TechComponentsInventoryTableProps> = ({
   items,
-  onViewDetails,
+  loading = false,
+  onItemClick,
   onEditItem,
-  onTransferItem,
-  onOrderItem,
-  onViewQR
+  onDeleteItem,
+  showBlockchainColumns = true,
 }) => {
   const theme = useTheme();
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [actionMenuAnchorEl, setActionMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedItem, setSelectedItem] = useState<TechComponentsInventoryItem | null>(null);
+  const [activePreset, setActivePreset] = useState<string>('default');
 
+  // Column presets
+  const columnPresets: ColumnPreset[] = [
+    {
+      id: 'default',
+      name: 'Default View',
+      columns: ['name', 'sku', 'currentStock', 'status', 'actions'],
+    },
+    {
+      id: 'ordering',
+      name: 'Ordering View',
+      columns: ['name', 'sku', 'supplier', 'currentStock', 'reorderPoint', 'leadTime', 'actions'],
+    },
+    {
+      id: 'warehouse',
+      name: 'Warehouse View',
+      columns: ['name', 'sku', 'category', 'locations', 'currentStock', 'actions'],
+    },
+    {
+      id: 'blockchain',
+      name: 'Blockchain View',
+      columns: ['name', 'sku', 'blockchainVerified', 'lastReceived', 'lastShipped', 'actions'],
+    },
+  ];
+
+  // All possible columns
+  const allColumns: ColumnDef[] = [
+    { 
+      id: 'name', 
+      label: 'Item Name', 
+      minWidth: 200,
+      format: (value, item) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {getStockStatusDot(item)}
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            {value}
+          </Typography>
+        </Box>
+      )
+    },
+    { 
+      id: 'sku', 
+      label: 'SKU', 
+      minWidth: 120,
+      format: (value) => (
+        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+          {value}
+        </Typography>
+      )
+    },
+    { 
+      id: 'category', 
+      label: 'Category', 
+      minWidth: 150,
+      format: (value, item) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Typography variant="body2">
+            {value}
+          </Typography>
+        </Box>
+      )
+    },
+    { 
+      id: 'subcategory', 
+      label: 'Subcategory', 
+      minWidth: 150 
+    },
+    { 
+      id: 'supplier', 
+      label: 'Supplier', 
+      minWidth: 180 
+    },
+    { 
+      id: 'currentStock', 
+      label: 'Current Stock', 
+      minWidth: 130, 
+      align: 'right',
+      format: (value) => value.toLocaleString()
+    },
+    { 
+      id: 'minLevel', 
+      label: 'Min Level', 
+      minWidth: 110, 
+      align: 'right',
+      format: (value) => value.toLocaleString()
+    },
+    { 
+      id: 'reorderPoint', 
+      label: 'Reorder Point', 
+      minWidth: 130, 
+      align: 'right',
+      format: (value) => value.toLocaleString()
+    },
+    { 
+      id: 'leadTime', 
+      label: 'Lead Time', 
+      minWidth: 110, 
+      align: 'right',
+      format: (value) => `${value} days`
+    },
+    { 
+      id: 'unitCost', 
+      label: 'Unit Cost', 
+      minWidth: 110, 
+      align: 'right',
+      format: (value) => `$${value.toFixed(2)}`
+    },
+    { 
+      id: 'totalValue', 
+      label: 'Total Value', 
+      minWidth: 120, 
+      align: 'right',
+      format: (value) => `$${value.toLocaleString()}`
+    },
+    { 
+      id: 'lastReceived', 
+      label: 'Last Received', 
+      minWidth: 150,
+      format: (value) => new Date(value).toLocaleDateString()
+    },
+    { 
+      id: 'lastShipped', 
+      label: 'Last Shipped', 
+      minWidth: 150,
+      format: (value) => new Date(value).toLocaleDateString()
+    },
+    { 
+      id: 'locations', 
+      label: 'Locations', 
+      minWidth: 150,
+      format: (value, item) => (
+        <Typography variant="body2">
+          {item.locations.length} location{item.locations.length !== 1 ? 's' : ''}
+        </Typography>
+      )
+    },
+    { 
+      id: 'blockchainVerified', 
+      label: 'Blockchain', 
+      minWidth: 120,
+      format: (value) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {value ? (
+            <VerifiedUserIcon fontSize="small" color="success" sx={{ mr: 0.5 }} />
+          ) : (
+            <StatusDot status="warning" />
+          )}
+          <Typography variant="body2">
+            {value ? 'Verified' : 'Unverified'}
+          </Typography>
+        </Box>
+      )
+    },
+    { 
+      id: 'status', 
+      label: 'Status', 
+      minWidth: 120,
+      format: (value, item) => {
+        const status = getStockStatus(item);
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <StatusDot status={status.severity} />
+            <Typography variant="body2">
+              {status.label}
+            </Typography>
+          </Box>
+        );
+      }
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      minWidth: 100,
+      align: 'center',
+      format: (value, item) => (
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <IconButton 
+            size="small" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleExpandRow(item.id);
+            }}
+          >
+            {expandedRow === item.id ? (
+              <KeyboardArrowUpIcon fontSize="small" />
+            ) : (
+              <KeyboardArrowDownIcon fontSize="small" />
+            )}
+          </IconButton>
+        </Box>
+      )
+    },
+  ];
+
+  // Get visible columns based on active preset
+  const getVisibleColumns = () => {
+    const preset = columnPresets.find(p => p.id === activePreset);
+    if (!preset) return allColumns;
+    return allColumns.filter(col => preset.columns.includes(col.id));
+  };
+
+  // Handle preset change
+  const handlePresetChange = (event: SelectChangeEvent) => {
+    setActivePreset(event.target.value);
+  };
+
+  // Get stock status
+  const getStockStatus = (item: TechComponentsInventoryItem) => {
+    if (item.currentStock === 0) {
+      return { label: 'Out of Stock', severity: 'critical' };
+    } else if (item.currentStock < item.reorderPoint) {
+      return { label: 'Low Stock', severity: 'warning' };
+    } else if (item.currentStock < item.minLevel) {
+      return { label: 'Below Min', severity: 'warning' };
+    } else {
+      return { label: 'In Stock', severity: 'good' };
+    }
+  };
+
+  // Get stock status dot
+  const getStockStatusDot = (item: TechComponentsInventoryItem) => {
+    const status = getStockStatus(item);
+    return <StatusDot status={status.severity} />;
+  };
+
+  // Handle page change
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
+  // Handle rows per page change
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    setRowsPerPage(+event.target.value);
     setPage(0);
   };
 
-  const handleExpandRow = (itemId: string) => {
-    setExpandedRow(expandedRow === itemId ? null : itemId);
+  // Handle row click
+  const handleRowClick = (item: TechComponentsInventoryItem) => {
+    onItemClick(item);
   };
 
-  const handleActionMenuOpen = (event: React.MouseEvent<HTMLButtonElement>, item: TechComponentsInventoryItem) => {
-    setActionMenuAnchorEl(event.currentTarget);
-    setSelectedItem(item);
+  // Handle row expansion
+  const handleExpandRow = (id: string) => {
+    setExpandedRow(expandedRow === id ? null : id);
   };
 
-  const handleActionMenuClose = () => {
-    setActionMenuAnchorEl(null);
-  };
-
-  const handleAction = (action: 'view' | 'edit' | 'transfer' | 'order' | 'qr') => {
-    if (!selectedItem) return;
-
-    handleActionMenuClose();
-
-    switch (action) {
-      case 'view':
-        onViewDetails(selectedItem);
-        break;
-      case 'edit':
-        onEditItem(selectedItem);
-        break;
-      case 'transfer':
-        onTransferItem(selectedItem);
-        break;
-      case 'order':
-        onOrderItem(selectedItem);
-        break;
-      case 'qr':
-        onViewQR(selectedItem);
-        break;
+  // Handle select all click
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const newSelected = items.map((n) => n.id);
+      setSelectedItems(newSelected);
+      return;
     }
+    setSelectedItems([]);
   };
 
-  const getStockLevelColor = (current: number, min: number) => {
-    const ratio = current / min;
-    if (ratio < 0.5) return theme.palette.error.main;
-    if (ratio < 1) return theme.palette.warning.main;
-    return theme.palette.success.main;
-  };
+  // Handle checkbox click
+  const handleCheckboxClick = (event: React.MouseEvent<HTMLButtonElement>, id: string) => {
+    event.stopPropagation();
+    const selectedIndex = selectedItems.indexOf(id);
+    let newSelected: string[] = [];
 
-  const getStockPercentage = (current: number, min: number, max: number) => {
-    // Calculate percentage relative to min and max
-    if (current <= min) return Math.max(Math.round((current / min) * 50), 5);
-    const range = max - min;
-    const excess = current - min;
-    return Math.min(50 + Math.round((excess / range) * 50), 100);
-  };
-
-  const getLifecycleStatusColor = (status: string) => {
-    switch (status) {
-      case 'new':
-        return theme.palette.info.main;
-      case 'active':
-        return theme.palette.success.main;
-      case 'mature':
-        return theme.palette.success.dark;
-      case 'declining':
-        return theme.palette.warning.main;
-      case 'end-of-life':
-        return theme.palette.error.light;
-      case 'obsolete':
-        return theme.palette.error.main;
-      default:
-        return theme.palette.grey[500];
+    if (selectedIndex === -1) {
+      newSelected = newSelected.concat(selectedItems, id);
+    } else if (selectedIndex === 0) {
+      newSelected = newSelected.concat(selectedItems.slice(1));
+    } else if (selectedIndex === selectedItems.length - 1) {
+      newSelected = newSelected.concat(selectedItems.slice(0, -1));
+    } else if (selectedIndex > 0) {
+      newSelected = newSelected.concat(
+        selectedItems.slice(0, selectedIndex),
+        selectedItems.slice(selectedIndex + 1),
+      );
     }
+
+    setSelectedItems(newSelected);
   };
 
-  const getWarehouseLabel = (item: TechComponentsInventoryItem) => {
-    if (item.locations.length === 1) {
-      return item.locations[0].warehouseId.charAt(0).toUpperCase() + item.locations[0].warehouseId.slice(1);
+  // Check if item is selected
+  const isSelected = (id: string) => selectedItems.indexOf(id) !== -1;
+
+  // Empty rows
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - items.length) : 0;
+
+  // Visible columns
+  const visibleColumns = getVisibleColumns();
+
+  // Helper function to safely render cell values
+  const renderCellValue = (value: any): React.ReactNode => {
+    if (value === null || value === undefined) {
+      return '';
     }
-    return `${item.locations.length} Locations`;
-  };
-
-  const isLowStock = (item: TechComponentsInventoryItem) => {
-    return item.currentStock < item.reorderPoint;
-  };
-
-  const isExcessStock = (item: TechComponentsInventoryItem) => {
-    return item.currentStock > item.maxLevel * 1.2;
-  };
-
-  const getRowBackgroundColor = (item: TechComponentsInventoryItem) => {
-    if (isLowStock(item)) return alpha(theme.palette.error.main, 0.05);
-    if (isExcessStock(item)) return alpha(theme.palette.warning.main, 0.05);
-    return 'transparent';
+    
+    if (typeof value === 'object' && !React.isValidElement(value)) {
+      if (Array.isArray(value)) {
+        return JSON.stringify(value);
+      }
+      return JSON.stringify(value);
+    }
+    
+    return value;
   };
 
   return (
-    <Paper sx={{ width: '100%', overflow: 'hidden', mb: 4 }}>
-      <TableContainer sx={{ maxHeight: 'calc(100vh - 350px)' }}>
+    <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+      {/* Table toolbar */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        p: 2,
+        borderBottom: `1px solid ${theme.palette.divider}`
+      }}>
+        <Box>
+          {selectedItems.length > 0 ? (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography variant="subtitle1" sx={{ mr: 2 }}>
+                {selectedItems.length} selected
+              </Typography>
+              <ButtonGroup size="small" variant="outlined">
+                <Button startIcon={<ShoppingCartIcon />}>
+                  Order
+                </Button>
+                <Button startIcon={<ShipIcon />}>
+                  Transfer
+                </Button>
+                <Button startIcon={<QrCodeIcon />}>
+                  QR Codes
+                </Button>
+              </ButtonGroup>
+            </Box>
+          ) : (
+            <Typography variant="subtitle1">
+              Inventory Items
+            </Typography>
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <FormControl variant="outlined" size="small" sx={{ minWidth: 150, mr: 1 }}>
+            <InputLabel id="column-preset-label">View</InputLabel>
+            <Select
+              labelId="column-preset-label"
+              id="column-preset"
+              value={activePreset}
+              onChange={handlePresetChange}
+              label="View"
+            >
+              {columnPresets.map((preset) => (
+                <MenuItem key={preset.id} value={preset.id}>
+                  {preset.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
+
+      {/* Table */}
+      <StyledTableContainer>
         <Table stickyHeader aria-label="inventory table">
           <TableHead>
             <TableRow>
-              <TableCell width="50px" />
-              <TableCell>SKU / Part Number</TableCell>
-              <TableCell>Component Name</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Location</TableCell>
-              <TableCell>Current Stock</TableCell>
-              <TableCell>Min/Max</TableCell>
-              <TableCell>Supplier</TableCell>
-              <TableCell align="right">Unit Cost</TableCell>
-              <TableCell align="right">Total Value</TableCell>
-              <TableCell>Last Activity</TableCell>
-              <TableCell width="80px">Actions</TableCell>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  indeterminate={selectedItems.length > 0 && selectedItems.length < items.length}
+                  checked={items.length > 0 && selectedItems.length === items.length}
+                  onChange={handleSelectAllClick}
+                  inputProps={{ 'aria-label': 'select all items' }}
+                />
+              </TableCell>
+              {visibleColumns.map((column) => (
+                <TableCell
+                  key={column.id}
+                  align={column.align}
+                  style={{ minWidth: column.minWidth }}
+                >
+                  {column.label}
+                </TableCell>
+              ))}
             </TableRow>
           </TableHead>
           <TableBody>
-            {items
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((item) => {
-                const isExpanded = expandedRow === item.id;
-                const stockColor = getStockLevelColor(item.currentStock, item.minLevel);
-                const stockPercentage = getStockPercentage(item.currentStock, item.minLevel, item.maxLevel);
-                const rowBackground = getRowBackgroundColor(item);
-
-                return (
-                  <React.Fragment key={item.id}>
-                    <TableRow 
-                      hover 
-                      sx={{ 
-                        '& > *': { borderBottom: 'unset' },
-                        backgroundColor: rowBackground
-                      }}
-                    >
-                      <TableCell>
-                        <IconButton
-                          aria-label="expand row"
-                          size="small"
-                          onClick={() => handleExpandRow(item.id)}
-                        >
-                          {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-                        </IconButton>
-                      </TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {item.sku}
-                          {item.blockchainVerified && (
-                            <Tooltip title="Blockchain Verified">
-                              <VerifiedIcon 
-                                fontSize="small" 
-                                color="success" 
-                                sx={{ ml: 1 }} 
-                              />
-                            </Tooltip>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                          {item.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 200, display: 'block' }}>
-                          {item.description}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {item.category}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {item.subcategory}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip 
-                          label={getWarehouseLabel(item)} 
-                          size="small" 
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', width: '100%' }}>
-                          <Box sx={{ width: '100%', mb: 1, display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                              {item.currentStock.toLocaleString()}
-                            </Typography>
-                            {isLowStock(item) && (
-                              <Tooltip title="Below reorder point">
-                                <WarningIcon fontSize="small" color="error" />
-                              </Tooltip>
-                            )}
-                          </Box>
-                          <LinearProgress
-                            variant="determinate"
-                            value={stockPercentage}
-                            sx={{ 
-                              width: '100%', 
-                              height: 6, 
-                              borderRadius: 1,
-                              backgroundColor: `${stockColor}20`,
-                              '& .MuiLinearProgress-bar': {
-                                backgroundColor: stockColor
-                              }
-                            }}
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={visibleColumns.length + 1} align="center" sx={{ py: 3 }}>
+                  <CircularProgress size={40} />
+                </TableCell>
+              </TableRow>
+            ) : items.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={visibleColumns.length + 1} align="center" sx={{ py: 3 }}>
+                  <Typography variant="body1">No items found</Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              items
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((item) => {
+                  const isItemSelected = isSelected(item.id);
+                  
+                  return (
+                    <React.Fragment key={item.id}>
+                      <StyledTableRow
+                        hover
+                        onClick={() => handleRowClick(item)}
+                        role="checkbox"
+                        aria-checked={isItemSelected}
+                        tabIndex={-1}
+                        selected={isItemSelected}
+                      >
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            checked={isItemSelected}
+                            onClick={(event) => handleCheckboxClick(event, item.id)}
+                            inputProps={{ 'aria-labelledby': `enhanced-table-checkbox-${item.id}` }}
                           />
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption" color="text.secondary" component="div">
-                          Min: {item.minLevel.toLocaleString()}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" component="div">
-                          Max: {item.maxLevel.toLocaleString()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>{item.supplier}</TableCell>
-                      <TableCell align="right">${item.unitCost.toFixed(2)}</TableCell>
-                      <TableCell align="right">${item.totalValue.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <Typography variant="caption" color="text.secondary" component="div">
-                          Received: {new Date(item.lastReceived).toLocaleDateString()}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" component="div">
-                          Shipped: {new Date(item.lastShipped).toLocaleDateString()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <IconButton
-                          size="small"
-                          onClick={(event) => handleActionMenuOpen(event, item)}
+                        </TableCell>
+                        {visibleColumns.map((column) => {
+                          const value = item[column.id as keyof TechComponentsInventoryItem];
+                          return (
+                            <TableCell key={column.id} align={column.align}>
+                              {column.format ? column.format(value, item) : renderCellValue(value)}
+                            </TableCell>
+                          );
+                        })}
+                      </StyledTableRow>
+                      
+                      {/* Expanded details row */}
+                      <TableRow>
+                        <TableCell 
+                          style={{ paddingBottom: 0, paddingTop: 0 }} 
+                          colSpan={visibleColumns.length + 1}
                         >
-                          <MoreVertIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={12}>
-                        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                          <Box sx={{ margin: 2 }}>
-                            <Typography variant="subtitle2" gutterBottom component="div">
-                              Additional Details
-                            </Typography>
-                            <Box sx={{ display: 'flex', gap: 4, mb: 2 }}>
-                              <Box>
-                                <Typography variant="body2" color="text.secondary">
-                                  Lead Time:
-                                </Typography>
-                                <Typography variant="body2">
-                                  {item.leadTime} days
-                                </Typography>
-                              </Box>
-                              <Box>
-                                <Typography variant="body2" color="text.secondary">
-                                  Lifecycle Status:
-                                </Typography>
-                                <Chip 
-                                  label={item.lifecycleStatus} 
-                                  size="small"
-                                  sx={{ 
-                                    backgroundColor: alpha(getLifecycleStatusColor(item.lifecycleStatus), 0.1),
-                                    color: getLifecycleStatusColor(item.lifecycleStatus),
-                                    fontWeight: 'medium',
-                                    textTransform: 'capitalize'
-                                  }}
-                                />
-                              </Box>
-                              <Box>
-                                <Typography variant="body2" color="text.secondary">
-                                  Compliance:
-                                </Typography>
-                                <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                                  <Chip 
-                                    label="RoHS" 
-                                    size="small"
-                                    color={item.complianceStatus.rohs ? "success" : "error"}
-                                    variant="outlined"
-                                  />
-                                  <Chip 
-                                    label="REACH" 
-                                    size="small"
-                                    color={item.complianceStatus.reach ? "success" : "error"}
-                                    variant="outlined"
-                                  />
-                                </Box>
-                              </Box>
-                              <Box>
-                                <Typography variant="body2" color="text.secondary">
-                                  Health Score:
-                                </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                  <LinearProgress
-                                    variant="determinate"
-                                    value={item.healthScore}
-                                    sx={{ 
-                                      width: 100, 
-                                      height: 8, 
-                                      borderRadius: 1,
-                                      mr: 1,
-                                      backgroundColor: alpha(theme.palette.success.main, 0.2),
-                                      '& .MuiLinearProgress-bar': {
-                                        backgroundColor: theme.palette.success.main
-                                      }
-                                    }}
-                                  />
-                                  <Typography variant="body2">
-                                    {item.healthScore}/100
+                          <Collapse in={expandedRow === item.id} timeout="auto" unmountOnExit>
+                            <Box sx={{ p: 3, backgroundColor: alpha(theme.palette.primary.main, 0.03) }}>
+                              <Grid container spacing={3}>
+                                <Grid item xs={12} md={4}>
+                                  <Typography variant="subtitle2" gutterBottom>
+                                    Item Details
                                   </Typography>
-                                </Box>
-                              </Box>
-                            </Box>
-                            <Typography variant="subtitle2" gutterBottom component="div">
-                              Location Breakdown
-                            </Typography>
-                            <Box sx={{ mb: 2 }}>
-                              {item.locations.map((location, index) => (
-                                <Box key={index} sx={{ display: 'flex', gap: 2, mb: 1 }}>
-                                  <Typography variant="body2" sx={{ width: 100 }}>
-                                    {location.warehouseId.charAt(0).toUpperCase() + location.warehouseId.slice(1)}:
+                                  <Divider sx={{ mb: 1 }} />
+                                  <Grid container spacing={1}>
+                                    <Grid item xs={6}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Category
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        {item.category}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Subcategory
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        {item.subcategory}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Supplier
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        {item.supplier}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Lifecycle
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
+                                        {item.lifecycleStatus}
+                                      </Typography>
+                                    </Grid>
+                                  </Grid>
+                                </Grid>
+                                
+                                <Grid item xs={12} md={4}>
+                                  <Typography variant="subtitle2" gutterBottom>
+                                    Stock Information
                                   </Typography>
-                                  <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                                    {location.quantity.toLocaleString()} units
+                                  <Divider sx={{ mb: 1 }} />
+                                  <Grid container spacing={1}>
+                                    <Grid item xs={6}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Current Stock
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        {item.currentStock.toLocaleString()}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Min Level
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        {item.minLevel.toLocaleString()}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Reorder Point
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        {item.reorderPoint.toLocaleString()}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Lead Time
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        {item.leadTime} days
+                                      </Typography>
+                                    </Grid>
+                                  </Grid>
+                                </Grid>
+                                
+                                <Grid item xs={12} md={4}>
+                                  <Typography variant="subtitle2" gutterBottom>
+                                    Financial & Blockchain
                                   </Typography>
-                                </Box>
-                              ))}
+                                  <Divider sx={{ mb: 1 }} />
+                                  <Grid container spacing={1}>
+                                    <Grid item xs={6}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Unit Cost
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        ${item.unitCost.toFixed(2)}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Total Value
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        ${item.totalValue.toLocaleString()}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Last Received
+                                      </Typography>
+                                      <Typography variant="body2">
+                                        {new Date(item.lastReceived).toLocaleDateString()}
+                                      </Typography>
+                                    </Grid>
+                                    <Grid item xs={6}>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Blockchain
+                                      </Typography>
+                                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                        {item.blockchainVerified ? (
+                                          <VerifiedUserIcon fontSize="small" color="success" sx={{ mr: 0.5 }} />
+                                        ) : (
+                                          <StatusDot status="warning" />
+                                        )}
+                                        <Typography variant="body2">
+                                          {item.blockchainVerified ? 'Verified' : 'Unverified'}
+                                        </Typography>
+                                      </Box>
+                                    </Grid>
+                                  </Grid>
+                                </Grid>
+                                
+                                <Grid item xs={12}>
+                                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                                    <Button 
+                                      variant="outlined" 
+                                      size="small" 
+                                      startIcon={<EditIcon />}
+                                      sx={{ mr: 1 }}
+                                    >
+                                      Edit
+                                    </Button>
+                                    <Button 
+                                      variant="outlined" 
+                                      size="small" 
+                                      startIcon={<ShoppingCartIcon />}
+                                      sx={{ mr: 1 }}
+                                    >
+                                      Order
+                                    </Button>
+                                    <Button 
+                                      variant="outlined" 
+                                      size="small" 
+                                      startIcon={<ShipIcon />}
+                                      sx={{ mr: 1 }}
+                                    >
+                                      Transfer
+                                    </Button>
+                                    <Button 
+                                      variant="outlined" 
+                                      size="small" 
+                                      startIcon={<QrCodeIcon />}
+                                    >
+                                      QR Code
+                                    </Button>
+                                  </Box>
+                                </Grid>
+                              </Grid>
                             </Box>
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                              <Tooltip title="View Details">
-                                <IconButton size="small" onClick={() => onViewDetails(item)}>
-                                  <VisibilityIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Edit Item">
-                                <IconButton size="small" onClick={() => onEditItem(item)}>
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Transfer Item">
-                                <IconButton size="small" onClick={() => onTransferItem(item)}>
-                                  <SwapHorizIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Order Item">
-                                <IconButton size="small" onClick={() => onOrderItem(item)}>
-                                  <ShoppingCartIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="View QR Code">
-                                <IconButton size="small" onClick={() => onViewQR(item)}>
-                                  <QrCodeIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-                          </Box>
-                        </Collapse>
-                      </TableCell>
-                    </TableRow>
-                  </React.Fragment>
-                );
-              })}
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
+                  );
+                })
+            )}
+            {emptyRows > 0 && (
+              <TableRow style={{ height: 53 * emptyRows }}>
+                <TableCell colSpan={visibleColumns.length + 1} />
+              </TableRow>
+            )}
           </TableBody>
         </Table>
-      </TableContainer>
+      </StyledTableContainer>
+      
+      {/* Pagination */}
       <TablePagination
-        rowsPerPageOptions={[25, 50, 100]}
+        rowsPerPageOptions={[10, 25, 50, 100]}
         component="div"
         count={items.length}
         rowsPerPage={rowsPerPage}
@@ -434,44 +766,6 @@ export const TechComponentsInventoryTable: React.FC<TechComponentsInventoryTable
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
       />
-
-      {/* Action Menu */}
-      <Menu
-        anchorEl={actionMenuAnchorEl}
-        open={Boolean(actionMenuAnchorEl)}
-        onClose={handleActionMenuClose}
-      >
-        <MenuItem onClick={() => handleAction('view')}>
-          <ListItemIcon>
-            <VisibilityIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>View Details</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleAction('edit')}>
-          <ListItemIcon>
-            <EditIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Edit Item</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleAction('transfer')}>
-          <ListItemIcon>
-            <SwapHorizIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Transfer Item</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleAction('order')}>
-          <ListItemIcon>
-            <ShoppingCartIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Order Item</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={() => handleAction('qr')}>
-          <ListItemIcon>
-            <QrCodeIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>View QR Code</ListItemText>
-        </MenuItem>
-      </Menu>
     </Paper>
   );
 };

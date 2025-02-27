@@ -113,7 +113,7 @@ export const mockInventoryItems: TechComponentsInventoryItem[] = [
     id: '1',
     sku: 'MC-AX7240-T',
     name: 'AX7240 Microcontroller',
-    description: '32-bit ARM Cortex-M7 microcontroller, 240MHz, 2MB Flash, 1MB RAM, LQFP100',
+    description: 'High-performance 32-bit microcontroller with integrated peripherals for IoT applications. Features ARM Cortex-M7 core, 2MB Flash, 1MB RAM, and extensive connectivity options.',
     category: 'Microcontrollers',
     subcategory: 'ARM Cortex-M',
     supplier: 'Taiwan Semiconductor',
@@ -133,7 +133,6 @@ export const mockInventoryItems: TechComponentsInventoryItem[] = [
     blockchainVerified: true,
     blockchainHash: '0x7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b',
     qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=MC-AX7240-T',
-    image: '/assets/components/microcontroller.jpg',
     datasheet: 'https://example.com/datasheets/AX7240.pdf',
     complianceStatus: {
       rohs: true,
@@ -165,10 +164,9 @@ export const mockInventoryItems: TechComponentsInventoryItem[] = [
     leadTime: 30,
     lifecycleStatus: 'mature',
     blockchainVerified: true,
-    blockchainHash: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b',
-    qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=CAP-CX400-104',
-    image: '/assets/components/capacitor.jpg',
-    datasheet: 'https://example.com/datasheets/CX400.pdf',
+    blockchainHash: '0x8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c',
+    qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=PC-104-SMD',
+    datasheet: 'https://example.com/datasheets/104-SMD.pdf',
     complianceStatus: {
       rohs: true,
       reach: true
@@ -197,10 +195,9 @@ export const mockInventoryItems: TechComponentsInventoryItem[] = [
     leadTime: 60,
     lifecycleStatus: 'active',
     blockchainVerified: true,
-    blockchainHash: '0x2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d',
-    qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=IC-RF-PA5040',
-    image: '/assets/components/rf_amplifier.jpg',
-    datasheet: 'https://example.com/datasheets/PA5040.pdf',
+    blockchainHash: '0x9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d',
+    qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=RF-AMP-2G4',
+    datasheet: 'https://example.com/datasheets/RF-AMP-2G4.pdf',
     complianceStatus: {
       rohs: true,
       reach: false
@@ -230,10 +227,9 @@ export const mockInventoryItems: TechComponentsInventoryItem[] = [
     leadTime: 40,
     lifecycleStatus: 'active',
     blockchainVerified: true,
-    blockchainHash: '0x3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e',
-    qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=MEM-FLASH-512G',
-    image: '/assets/components/flash_memory.jpg',
-    datasheet: 'https://example.com/datasheets/FLASH512G.pdf',
+    blockchainHash: '0xc0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e',
+    qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=FM-128G-NOR',
+    datasheet: 'https://example.com/datasheets/FM-128G-NOR.pdf',
     complianceStatus: {
       rohs: true,
       reach: true
@@ -263,10 +259,9 @@ export const mockInventoryItems: TechComponentsInventoryItem[] = [
     leadTime: 35,
     lifecycleStatus: 'active',
     blockchainVerified: true,
-    blockchainHash: '0x4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f',
-    qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=CONN-USB-C-SMD',
-    image: '/assets/components/usb_c_connector.jpg',
-    datasheet: 'https://example.com/datasheets/USBC.pdf',
+    blockchainHash: '0xd1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f',
+    qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=USB-C-CON',
+    datasheet: 'https://example.com/datasheets/USB-C-CON.pdf',
     complianceStatus: {
       rohs: true,
       reach: true
@@ -561,4 +556,137 @@ export const techComponentsInventoryData: TechComponentsInventoryData = {
   warehouses: mockWarehouses,
   recommendations: mockRecommendations,
   savedFilters: mockSavedFilters
+};
+
+// Mock inventory categories
+export const inventoryCategories = [
+  {
+    id: 'cat-1',
+    name: 'Processors',
+    skuCount: 42,
+    totalValue: 125000,
+    stockHealth: 'good' as 'good' | 'warning' | 'critical',
+    lowStockCount: 0,
+    icon: 'memory'
+  },
+  {
+    id: 'cat-2',
+    name: 'Storage Devices',
+    skuCount: 38,
+    totalValue: 85000,
+    stockHealth: 'warning' as 'good' | 'warning' | 'critical',
+    lowStockCount: 5,
+    icon: 'storage'
+  },
+  {
+    id: 'cat-3',
+    name: 'Network Equipment',
+    skuCount: 56,
+    totalValue: 210000,
+    stockHealth: 'good' as 'good' | 'warning' | 'critical',
+    lowStockCount: 2,
+    icon: 'router'
+  },
+  {
+    id: 'cat-4',
+    name: 'Sensors',
+    skuCount: 29,
+    totalValue: 45000,
+    stockHealth: 'critical' as 'good' | 'warning' | 'critical',
+    lowStockCount: 8,
+    icon: 'sensors'
+  },
+  {
+    id: 'cat-5',
+    name: 'Batteries',
+    skuCount: 18,
+    totalValue: 32000,
+    stockHealth: 'warning' as 'good' | 'warning' | 'critical',
+    lowStockCount: 4,
+    icon: 'battery'
+  },
+  {
+    id: 'cat-6',
+    name: 'Cables & Connectors',
+    skuCount: 64,
+    totalValue: 28000,
+    stockHealth: 'good' as 'good' | 'warning' | 'critical',
+    lowStockCount: 0,
+    icon: 'cable'
+  },
+  {
+    id: 'cat-7',
+    name: 'Electronic Components',
+    skuCount: 87,
+    totalValue: 95000,
+    stockHealth: 'warning' as 'good' | 'warning' | 'critical',
+    lowStockCount: 12,
+    icon: 'components'
+  },
+  {
+    id: 'cat-8',
+    name: 'Display Devices',
+    skuCount: 31,
+    totalValue: 120000,
+    stockHealth: 'good' as 'good' | 'warning' | 'critical',
+    lowStockCount: 3,
+    icon: 'devices'
+  }
+];
+
+// Export the complete data structure for the TechComponentsInventory
+export const mockTechComponentsInventoryData = {
+  items: techComponentsInventoryData.items,
+  categories: inventoryCategories,
+  metrics: {
+    totalSKUs: techComponentsInventoryData.items.length,
+    totalValue: techComponentsInventoryData.items.reduce((sum, item) => sum + item.totalValue, 0),
+    turnoverRate: 4.2,
+    averageDaysOnHand: 45,
+    slowMovingItems: techComponentsInventoryData.items.filter(item => item.currentStock < item.reorderPoint).length,
+    excessInventoryValue: 125000,
+    stockoutEvents: 12
+  },
+  warehouses: [
+    {
+      id: 'wh-001',
+      name: 'Main Warehouse',
+      level: 'warehouse',
+      children: [
+        {
+          id: 'sec-001',
+          name: 'Electronics Section',
+          level: 'section',
+          children: [
+            {
+              id: 'aisle-001',
+              name: 'Aisle A',
+              level: 'aisle',
+              children: [
+                {
+                  id: 'shelf-001',
+                  name: 'Shelf 1',
+                  level: 'shelf',
+                  children: []
+                },
+                {
+                  id: 'shelf-002',
+                  name: 'Shelf 2',
+                  level: 'shelf',
+                  children: []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'wh-002',
+      name: 'Secondary Warehouse',
+      level: 'warehouse',
+      children: []
+    }
+  ],
+  recommendations: []
 }; 

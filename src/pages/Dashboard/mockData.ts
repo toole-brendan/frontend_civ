@@ -556,7 +556,7 @@ export const mockDashboardData: DashboardData = {
       message: 'Added 500 units of A7X Microprocessors to Austin warehouse',
       timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
       user: 'Michael Chen',
-      userAvatar: '/assets/images/avatars/1.jpg',
+      userAvatar: '',
       itemId: 'INV-001',
     },
     {
@@ -565,7 +565,7 @@ export const mockDashboardData: DashboardData = {
       message: 'Processed payment from Robotics Solutions Inc. ($24,750.00)',
       timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
       user: 'Sarah Johnson',
-      userAvatar: '/assets/images/avatars/2.jpg',
+      userAvatar: '',
     },
     {
       id: '3',
@@ -573,7 +573,7 @@ export const mockDashboardData: DashboardData = {
       message: 'Fulfilled order #ORD-2023-05210 for MediTech Devices',
       timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
       user: 'David Rodriguez',
-      userAvatar: '/assets/images/avatars/3.jpg',
+      userAvatar: '',
       itemId: 'ORD-2023-05210',
     },
     {
@@ -582,7 +582,7 @@ export const mockDashboardData: DashboardData = {
       message: 'Transferred 200 Power Regulators from Austin to San Jose warehouse',
       timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
       user: 'Michael Chen',
-      userAvatar: '/assets/images/avatars/1.jpg',
+      userAvatar: '',
       itemId: 'TRF-2023-00123',
     },
     {
@@ -597,7 +597,7 @@ export const mockDashboardData: DashboardData = {
       message: 'New supplier account created: Korea Chip Manufacturing',
       timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
       user: 'Michael Chen',
-      userAvatar: '/assets/images/avatars/1.jpg',
+      userAvatar: '',
     },
   ],
   criticalAlerts: [

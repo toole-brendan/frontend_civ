@@ -15,23 +15,33 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Tabs,
+  Tab,
+  Divider,
+  IconButton,
+  Card,
+  CardContent,
+  Stack,
+  Chip,
+  alpha
 } from '@mui/material';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import { Add as AddIcon } from '@mui/icons-material';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
+import { Add as AddIcon, FilterList as FilterListIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import PageTitle from '../../components/common/PageTitle';
 
 // Import the components
 import { WarehouseSelector } from './components/WarehouseSelector';
 import { InventoryFilters } from './components/InventoryFilters';
-import { InventoryTable } from './components/InventoryTable';
 import { ItemDetailsDrawer } from './components/ItemDetailsDrawer';
 import { AddItemModal } from './components/AddItemModal';
 import { InventoryItem, WarehouseStructure } from './types';
 import InventoryHeader from './components/InventoryHeader';
-import CategoryCards from './components/CategoryCards';
+import CategoryScrollBar from './components/CategoryScrollBar';
 import InventoryMetricsStrip from './components/InventoryMetricsStrip';
 import TechComponentsInventoryTable from './components/TechComponentsInventoryTable';
 import InventoryInsights from './components/InventoryInsights';
@@ -41,16 +51,19 @@ import AdvancedSearchPanel from './components/AdvancedSearchPanel';
 import { 
   TechComponentsInventoryData, 
   TechComponentsInventoryItem,
-  SavedFilter
+  SavedFilter,
+  InventoryCategory,
+  InventoryMetrics
 } from './types';
-import { techComponentsInventoryData } from './mockData';
+import { techComponentsInventoryData, inventoryCategories, mockTechComponentsInventoryData } from './mockData';
 
 // Base card styling following dashboard pattern
 const DashboardCard = styled(Paper)(({ theme }) => ({
   height: '100%',
   backgroundColor: theme.palette.background.paper,
-  borderRadius: 0,
+  borderRadius: theme.shape.borderRadius * 2,
   border: `1px solid ${theme.palette.divider}`,
+  overflow: 'hidden',
   '& .card-header': {
     padding: theme.spacing(2),
     borderBottom: `1px solid ${theme.palette.divider}`,
@@ -59,8 +72,6 @@ const DashboardCard = styled(Paper)(({ theme }) => ({
     alignItems: 'center',
     '& h6': {
       fontWeight: 600,
-      textTransform: 'uppercase',
-      letterSpacing: '0.1em',
     },
   },
   '& .card-content': {
@@ -68,434 +79,560 @@ const DashboardCard = styled(Paper)(({ theme }) => ({
   },
 }));
 
-// Mock data for initial testing
-const mockWarehouseStructure: WarehouseStructure = {
-  id: 'main',
-  name: 'Main Warehouse',
-  level: 'warehouse',
-  children: [
-    {
-      id: 'section-a',
-      name: 'Section A',
-      level: 'section',
-      children: [
-        {
-          id: 'aisle-1',
-          name: 'Aisle 1',
-          level: 'aisle',
-          children: [
-            { id: 'shelf-1', name: 'Shelf 1', level: 'shelf' },
-            { id: 'shelf-2', name: 'Shelf 2', level: 'shelf' },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'section-b',
-      name: 'Section B',
-      level: 'section',
-    },
-  ],
-};
+// Information display card - flat, light background
+const InfoCard = styled(Paper)(({ theme }) => ({
+  backgroundColor: theme.palette.background.default,
+  borderRadius: theme.shape.borderRadius * 2,
+  padding: theme.spacing(2),
+  height: '100%',
+  border: `1px solid ${theme.palette.divider}`,
+}));
 
-// Mock inventory items
-const mockInventoryItems: InventoryItem[] = [
-  {
-    id: '1',
-    name: 'Widget A',
-    sku: 'WA-1234',
-    serialNumber: 'SN12345',
-    status: 'in_stock',
-    location: 'Section A, Aisle 1, Shelf 1',
-    assignedTo: null,
-    warehouse: 'Main Warehouse',
-    category: 'Electronics',
-    lastUpdated: '2023-10-15',
-    quantity: 25,
-    price: 29.99,
-    supplier: 'ABC Supplies',
-  },
-  {
-    id: '2',
-    name: 'Gadget B',
-    sku: 'GB-5678',
-    serialNumber: 'SN67890',
-    status: 'reserved',
-    location: 'Section B, Aisle 3, Shelf 2',
-    assignedTo: 'Order #12345',
-    warehouse: 'Main Warehouse',
-    category: 'Tools',
-    lastUpdated: '2023-10-16',
-    quantity: 10,
-    price: 49.99,
-    supplier: 'XYZ Manufacturing',
-  },
-  {
-    id: '3',
-    name: 'Component C',
-    sku: 'CC-9012',
-    serialNumber: 'SN90123',
-    status: 'shipped',
-    location: 'Shipping Area',
-    assignedTo: 'Order #12346',
-    warehouse: 'Main Warehouse',
-    category: 'Parts',
-    lastUpdated: '2023-10-17',
-    quantity: 5,
-    price: 19.99,
-    supplier: 'ABC Supplies',
-  },
-];
+// Action area card - subtle shadow, white background
+const ActionCard = styled(Paper)(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper,
+  borderRadius: theme.shape.borderRadius * 2,
+  padding: theme.spacing(2),
+  boxShadow: theme.shadows[1],
+  height: '100%',
+}));
 
-// Mock inventory metrics
-const mockInventoryMetrics = {
-  totalItems: 500,
-  itemsInStock: 350,
-  itemsReserved: 75,
-  itemsShipped: 60,
-  itemsUnderMaintenance: 15,
-  totalValue: 24750.50,
-};
+interface AlertCardProps {
+  severity?: 'warning' | 'error' | 'success' | 'info';
+}
 
-// Mock categories for filters
-const mockCategories = [
-  { id: '1', name: 'Electronics', description: 'Electronic components and devices', color: '#4caf50' },
-  { id: '2', name: 'Tools', description: 'Hand and power tools', color: '#2196f3' },
-  { id: '3', name: 'Parts', description: 'Spare parts and components', color: '#ff9800' },
-];
+// Alert/notification card - colored border, light colored background
+const AlertCard = styled(Paper)<AlertCardProps>(({ theme, severity = 'info' }) => ({
+  backgroundColor: 
+    severity === 'warning' 
+      ? alpha(theme.palette.warning.main, 0.05)
+      : severity === 'error' 
+        ? alpha(theme.palette.error.main, 0.05)
+        : severity === 'success'
+          ? alpha(theme.palette.success.main, 0.05)
+          : alpha(theme.palette.info.main, 0.05),
+  borderRadius: theme.shape.borderRadius * 2,
+  padding: theme.spacing(2),
+  height: '100%',
+  border: `1px solid ${
+    severity === 'warning' 
+      ? theme.palette.warning.main
+      : severity === 'error' 
+        ? theme.palette.error.main
+        : severity === 'success'
+          ? theme.palette.success.main
+          : theme.palette.info.main
+  }`,
+}));
 
-// Mock locations for item placement
-const mockLocations = [
-  { id: 'loc1', name: 'Section A, Aisle 1, Shelf 1', path: ['main', 'section-a', 'aisle-1', 'shelf-1'] },
-  { id: 'loc2', name: 'Section B, Aisle 3, Shelf 2', path: ['main', 'section-b', 'aisle-3', 'shelf-2'] },
-  { id: 'loc3', name: 'Shipping Area', path: ['main', 'shipping'] },
-];
+interface TabPanelProps {
+  children?: React.ReactNode;
+  value: number;
+  index: number;
+}
 
-// Define MetricCard component for inventory metrics
-const MetricCard: React.FC<{
-  title: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color?: string;
-}> = ({ title, value, icon, color = 'primary' }) => (
-  <Grid item xs={12} sm={6} md={3}>
-    <DashboardCard elevation={0}>
-      <Box className="card-content" sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <Box
-            sx={{
-              mr: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              backgroundColor: `${color}.light`,
-              color: `${color}.main`,
-            }}
-          >
-            {icon}
-          </Box>
-          <Typography variant="subtitle2" color="textSecondary">
-            {title}
-          </Typography>
+// Custom TabPanel component
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`inventory-tabpanel-${index}`}
+      aria-labelledby={`inventory-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ pt: 3, overflow: 'hidden' }}>
+          {children}
         </Box>
-        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-          {value}
-        </Typography>
-      </Box>
-    </DashboardCard>
-  </Grid>
-);
+      )}
+    </div>
+  );
+}
 
-const Inventory: React.FC = () => {
+function a11yProps(index: number) {
+  return {
+    id: `inventory-tab-${index}`,
+    'aria-controls': `inventory-tabpanel-${index}`,
+  };
+}
+
+const Inventory = () => {
   const theme = useTheme();
-  const [data, setData] = useState<TechComponentsInventoryData>(techComponentsInventoryData);
-  const [filteredItems, setFilteredItems] = useState<TechComponentsInventoryItem[]>(data.items);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
+  const [selectedWarehouse, setSelectedWarehouse] = useState('wh-001');
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<TechComponentsInventoryItem | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'info' | 'warning' | 'error';
-  }>({
-    open: false,
-    message: '',
-    severity: 'info'
-  });
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean;
-    title: string;
-    message: string;
-    action: () => void;
-  }>({
-    open: false,
-    title: '',
-    message: '',
-    action: () => {}
-  });
-
-  // Handle search panel toggle
-  const handleSearchToggle = () => {
-    setSearchOpen(!searchOpen);
+  const [addItemOpen, setAddItemOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('success');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  
+  // Use mock data
+  const [inventoryData, setInventoryData] = useState(mockTechComponentsInventoryData);
+  const { items, categories, metrics } = inventoryData;
+  
+  // Ensure warehouses have the correct type for the level property
+  const typedWarehouses: WarehouseStructure[] = mockTechComponentsInventoryData.warehouses.map(warehouse => ({
+    id: warehouse.id,
+    name: warehouse.name,
+    level: 'warehouse' as const,
+    children: warehouse.children?.map(section => ({
+      id: section.id,
+      name: section.name,
+      level: 'section' as const,
+      children: section.children?.map(aisle => ({
+        id: aisle.id,
+        name: aisle.name,
+        level: 'aisle' as const,
+        children: aisle.children?.map(shelf => ({
+          id: shelf.id,
+          name: shelf.name,
+          level: 'shelf' as const,
+          children: shelf.children || []
+        })) || []
+      })) || []
+    })) || []
+  }));
+  
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
   };
 
-  // Handle filter changes
-  const handleFilterChange = (filters: any) => {
-    // In a real app, this would filter based on the criteria
-    // For now, we'll just simulate filtering with a subset of items
-    const filtered = data.items.filter(item => {
-      if (filters.search && !item.name.toLowerCase().includes(filters.search.toLowerCase()) && 
-          !item.sku.toLowerCase().includes(filters.search.toLowerCase())) {
-        return false;
-      }
-      
-      if (filters.categories.length > 0 && !filters.categories.includes(item.category)) {
-        return false;
-      }
-      
-      if (filters.suppliers.length > 0 && !filters.suppliers.includes(item.supplier)) {
-        return false;
-      }
-      
-      if (filters.locations.length > 0 && !item.locations.some(loc => 
-        filters.locations.includes(loc.warehouseId))) {
-        return false;
-      }
-      
-      return true;
-    });
-    
-    setFilteredItems(filtered);
-    
-    // Update active filters for display
-    const newActiveFilters: string[] = [];
-    if (filters.search) newActiveFilters.push(`Search: ${filters.search}`);
-    if (filters.categories.length) newActiveFilters.push(`Categories: ${filters.categories.length}`);
-    if (filters.suppliers.length) newActiveFilters.push(`Suppliers: ${filters.suppliers.length}`);
-    if (filters.locations.length) newActiveFilters.push(`Locations: ${filters.locations.length}`);
-    
-    setActiveFilters(newActiveFilters);
+  const handleWarehouseChange = (warehouseId: string) => {
+    setSelectedWarehouse(warehouseId);
   };
 
-  // Handle saved filter load
-  const handleLoadSavedFilter = (filter: SavedFilter) => {
-    handleFilterChange(filter.filters);
-    setSearchOpen(false);
-    showSnackbar(`Loaded filter: ${filter.name}`, 'success');
+  const handleFilterToggle = () => {
+    setFilterDrawerOpen(!filterDrawerOpen);
   };
 
-  // Handle save filter
-  const handleSaveFilter = (name: string, filters: any) => {
-    // In a real app, this would save to the backend
-    showSnackbar(`Filter "${name}" saved successfully`, 'success');
-    setSearchOpen(false);
+  const handleAdvancedSearchToggle = () => {
+    setAdvancedSearchOpen(!advancedSearchOpen);
   };
 
-  // Handle view item details
-  const handleViewDetails = (item: TechComponentsInventoryItem) => {
+  const handleItemClick = (item: TechComponentsInventoryItem) => {
     setSelectedItem(item);
-    setDetailsOpen(true);
   };
 
-  // Handle edit item
+  const handleCloseDetails = () => {
+    setSelectedItem(null);
+  };
+
+  const handleAddItemClick = () => {
+    setAddItemOpen(true);
+  };
+
+  const handleCloseAddItem = () => {
+    setAddItemOpen(false);
+  };
+
+  const handleSaveItem = (item: Partial<TechComponentsInventoryItem>) => {
+    // Logic to save new item
+    setInventoryData({
+      ...inventoryData,
+      items: [...items, { ...item, id: `item-${Date.now()}` } as TechComponentsInventoryItem]
+    });
+    setAddItemOpen(false);
+    setSnackbarOpen(true);
+    setSnackbarMessage('Item added successfully');
+    setSnackbarSeverity('success');
+  };
+
   const handleEditItem = (item: TechComponentsInventoryItem) => {
-    // In a real app, this would open an edit form
-    showSnackbar(`Editing item: ${item.name}`, 'info');
+    setSelectedItem(item);
+    // Open edit modal or drawer
   };
 
-  // Handle transfer item
-  const handleTransferItem = (item: TechComponentsInventoryItem) => {
-    // In a real app, this would open a transfer dialog
-    showConfirmDialog(
-      'Transfer Item',
-      `Are you sure you want to transfer ${item.name}?`,
-      () => {
-        showSnackbar(`Transfer initiated for: ${item.name}`, 'success');
-      }
-    );
+  const handleDeleteItem = (itemId: string) => {
+    setItemToDelete(itemId);
+    setDeleteDialogOpen(true);
   };
 
-  // Handle order item
-  const handleOrderItem = (item: TechComponentsInventoryItem) => {
-    // In a real app, this would open an order dialog
-    showConfirmDialog(
-      'Order Item',
-      `Are you sure you want to order more ${item.name}?`,
-      () => {
-        showSnackbar(`Order placed for: ${item.name}`, 'success');
-      }
-    );
-  };
-
-  // Handle view QR code
-  const handleViewQR = (item: TechComponentsInventoryItem) => {
-    // In a real app, this would display the QR code
-    showSnackbar(`Viewing QR code for: ${item.name}`, 'info');
-  };
-
-  // Handle recommendation action
-  const handleRecommendationAction = (action: string, itemId: string) => {
-    const item = data.items.find(i => i.id === itemId);
-    if (!item) return;
-
-    switch (action) {
-      case 'order':
-        handleOrderItem(item);
-        break;
-      case 'transfer':
-        handleTransferItem(item);
-        break;
-      case 'rebalance':
-        showSnackbar(`Rebalancing inventory for: ${item.name}`, 'info');
-        break;
-      case 'substitute':
-        showSnackbar(`Finding substitutes for: ${item.name}`, 'info');
-        break;
-      case 'view':
-        handleViewDetails(item);
-        break;
-      case 'view_all':
-        showSnackbar('Viewing all recommendations', 'info');
-        break;
-      default:
-        break;
-    }
-  };
-
-  // Handle category click
-  const handleCategoryClick = (categoryId: string) => {
-    const category = data.categories.find(c => c.id === categoryId);
-    if (!category) return;
-    
-    // Filter items by category
-    const filtered = data.items.filter(item => item.category === category.name);
-    setFilteredItems(filtered);
-    setActiveFilters([`Category: ${category.name}`]);
-    showSnackbar(`Viewing category: ${category.name}`, 'info');
-  };
-
-  // Show snackbar
-  const showSnackbar = (message: string, severity: 'success' | 'info' | 'warning' | 'error') => {
-    setSnackbar({
-      open: true,
-      message,
-      severity
+  const confirmDelete = () => {
+    const newData = items.filter(item => item.id !== itemToDelete);
+    setInventoryData({
+      ...inventoryData,
+      items: newData
     });
+    setDeleteDialogOpen(false);
+    setSnackbarOpen(true);
+    setSnackbarMessage('Item deleted successfully');
+    setSnackbarSeverity('success');
   };
 
-  // Close snackbar
   const handleCloseSnackbar = () => {
-    setSnackbar({
-      ...snackbar,
-      open: false
-    });
+    setSnackbarOpen(false);
   };
 
-  // Show confirmation dialog
-  const showConfirmDialog = (title: string, message: string, action: () => void) => {
-    setConfirmDialog({
-      open: true,
-      title,
-      message,
-      action
-    });
+  const handleCategoryClick = (categoryId: string) => {
+    // Logic to filter by category
+    console.log(`Filtering by category: ${categoryId}`);
+    // Implement filtering logic here
   };
 
-  // Handle confirm dialog close
-  const handleConfirmDialogClose = (confirm: boolean) => {
-    if (confirm) {
-      confirmDialog.action();
-    }
-    setConfirmDialog({
-      ...confirmDialog,
-      open: false
-    });
+  const handleReorderClick = () => {
+    // Logic to create reorder
+    console.log('Creating reorder for low stock items');
+    // Implement reorder creation logic here
   };
 
-  // Clear all filters
-  const handleClearFilters = () => {
-    setFilteredItems(data.items);
-    setActiveFilters([]);
-    showSnackbar('All filters cleared', 'info');
+  const handleValueDetailsClick = () => {
+    // Logic to view value details
+    console.log('Viewing inventory value details');
+    // Implement value details view logic here
+  };
+
+  const handleStockoutReportClick = () => {
+    // Logic to view stockout report
+    console.log('Viewing stockout report');
+    // Implement stockout report view logic here
+  };
+
+  const handleScanClick = () => {
+    // Logic to open scanner
+    console.log('Opening QR scanner');
+    // Implement scanner logic here
   };
 
   return (
-    <Container maxWidth={false} sx={{ mt: 3, mb: 4 }}>
-      {/* Header with metrics */}
-      <InventoryHeader 
-        metrics={data.metrics}
-        activeFilters={activeFilters.length}
-        onAdvancedSearchClick={handleSearchToggle}
-        onFilterClick={handleSearchToggle}
-        onExportClick={() => showSnackbar('Exporting inventory data', 'info')}
-        onImportClick={() => showSnackbar('Importing inventory data', 'info')}
-        onAddItemClick={() => showSnackbar('Adding new item', 'info')}
+    <Box sx={{ 
+      width: '100%', 
+      overflow: 'hidden',
+      maxWidth: '100%'
+    }}>
+      {/* Header with title and actions */}
+      <InventoryHeader
+        metrics={metrics}
+        activeFilters={0}
+        onAdvancedSearchClick={handleAdvancedSearchToggle}
+        onFilterClick={handleFilterToggle}
+        onAddItemClick={handleAddItemClick}
+        onImportClick={() => console.log('Import clicked')}
+        onExportClick={() => console.log('Export clicked')}
+        onScanClick={handleScanClick}
+        onSettingsClick={() => console.log('Settings clicked')}
       />
 
-      {/* Metrics Strip */}
-      <Box sx={{ mt: 3, mb: 3 }}>
-        <InventoryMetricsStrip metrics={data.metrics} />
+      {/* Key Metrics Strip */}
+      <InventoryMetricsStrip 
+        metrics={metrics} 
+        onReorderClick={handleReorderClick}
+        onValueDetailsClick={handleValueDetailsClick}
+        onStockoutReportClick={handleStockoutReportClick}
+      />
+
+      {/* Category Scroll Bar */}
+      <CategoryScrollBar 
+        categories={categories} 
+        onCategoryClick={handleCategoryClick} 
+      />
+
+      {/* Tabs for Inventory Management and Blockchain Verification */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange} 
+          aria-label="inventory tabs"
+          sx={{
+            '& .MuiTab-root': {
+              textTransform: 'none',
+              fontWeight: 'medium',
+              fontSize: '1rem',
+              minHeight: 48,
+              px: 3
+            }
+          }}
+        >
+          <Tab 
+            icon={<InventoryIcon />} 
+            iconPosition="start" 
+            label="Inventory Management" 
+            {...a11yProps(0)} 
+          />
+          <Tab 
+            icon={<VerifiedUserIcon />} 
+            iconPosition="start" 
+            label="Blockchain Verification" 
+            {...a11yProps(1)} 
+          />
+          <Tab 
+            icon={<QrCodeScannerIcon />} 
+            iconPosition="start" 
+            label="Digital Twins" 
+            {...a11yProps(2)} 
+          />
+        </Tabs>
       </Box>
 
-      {/* Category Cards */}
-      <Box sx={{ mt: 3, mb: 3 }}>
-        <CategoryCards 
-          categories={data.categories} 
-          onCategoryClick={handleCategoryClick} 
-        />
+      {/* Main content */}
+      <Box sx={{ mt: 3, overflow: 'hidden' }}>
+        <TabPanel value={tabValue} index={0}>
+          <Box>
+            <Grid container spacing={3}>
+              {/* Main inventory table */}
+              <Grid item xs={12} md={8}>
+                <Paper 
+                  elevation={0} 
+                  sx={{ 
+                    p: 2, 
+                    borderRadius: 2,
+                    border: `1px solid ${theme.palette.divider}`,
+                    height: '100%',
+                    overflow: 'auto'
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h6">Inventory Items</Typography>
+                    <Box>
+                      <WarehouseSelector
+                        selectedWarehouse={selectedWarehouse}
+                        onChange={handleWarehouseChange}
+                        warehouses={typedWarehouses}
+                        onLocationSelect={() => {}}
+                      />
+                    </Box>
+                  </Box>
+                  
+                  <TechComponentsInventoryTable 
+                    items={items}
+                    onItemClick={handleItemClick}
+                    onEditItem={handleEditItem}
+                    onDeleteItem={handleDeleteItem}
+                  />
+                </Paper>
+              </Grid>
+              
+              {/* Insights panel */}
+              <Grid item xs={12} md={4}>
+                <InventoryInsights 
+                  items={items}
+                  onActionClick={(actionType, itemId) => {
+                    console.log(`Action ${actionType} for item ${itemId}`);
+                    // Handle different action types here
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        </TabPanel>
+        
+        {/* Blockchain Verification Tab */}
+        <TabPanel value={tabValue} index={1}>
+          <Grid container spacing={3} sx={{ overflow: 'hidden' }}>
+            <Grid item xs={12}>
+              <AlertCard severity="success">
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <CheckCircleIcon color="success" sx={{ mr: 1 }} />
+                  <Typography variant="h6">Blockchain Verification Active</Typography>
+                </Box>
+                <Typography variant="body1">
+                  All inventory items are being tracked on the blockchain for enhanced security and transparency.
+                  Each item has a unique digital signature that can be verified at any time.
+                </Typography>
+              </AlertCard>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <DashboardCard>
+                <Box className="card-header">
+                  <Typography variant="h6">Verification Statistics</Typography>
+                </Box>
+                <Box className="card-content">
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="body2" color="text.secondary">Total Items</Typography>
+                        <Typography variant="h4">{items.length}</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="body2" color="text.secondary">Verified Items</Typography>
+                        <Typography variant="h4">
+                          {items.filter(item => item.blockchainVerified).length}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">Verification Rate</Typography>
+                        <Typography variant="h4">
+                          {Math.round((items.filter(item => item.blockchainVerified).length / items.length) * 100)}%
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">Last Sync</Typography>
+                        <Typography variant="h6">Today, 2:30 PM</Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </DashboardCard>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <DashboardCard>
+                <Box className="card-header">
+                  <Typography variant="h6">Verification Actions</Typography>
+                </Box>
+                <Box className="card-content">
+                  <Stack spacing={2}>
+                    <Button 
+                      variant="contained" 
+                      color="primary" 
+                      fullWidth
+                      startIcon={<RefreshIcon />}
+                    >
+                      Sync with Blockchain
+                    </Button>
+                    <Button 
+                      variant="outlined" 
+                      fullWidth
+                      startIcon={<QrCodeScannerIcon />}
+                    >
+                      Verify Item via QR Code
+                    </Button>
+                    <Button 
+                      variant="outlined" 
+                      fullWidth
+                    >
+                      View Verification History
+                    </Button>
+                  </Stack>
+                </Box>
+              </DashboardCard>
+            </Grid>
+          </Grid>
+        </TabPanel>
+
+        {/* Digital Twins Tab */}
+        <TabPanel value={tabValue} index={2}>
+          <Grid container spacing={3} sx={{ overflow: 'hidden' }}>
+            <Grid item xs={12}>
+              <AlertCard severity="info">
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <InventoryIcon color="primary" sx={{ mr: 1 }} />
+                  <Typography variant="h6">Digital Twins Management</Typography>
+                </Box>
+                <Typography variant="body1">
+                  Digital twins provide a virtual representation of your physical inventory items.
+                  Each digital twin is linked to the blockchain for secure and transparent tracking.
+                </Typography>
+              </AlertCard>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <DashboardCard>
+                <Box className="card-header">
+                  <Typography variant="h6">Digital Twins Registry</Typography>
+                </Box>
+                <Box className="card-content" sx={{ p: 0, overflow: 'auto' }}>
+                  <TechComponentsInventoryTable
+                    items={items.filter(item => item.blockchainVerified)}
+                    onItemClick={handleItemClick}
+                    onEditItem={handleEditItem}
+                    onDeleteItem={handleDeleteItem}
+                    showBlockchainColumns={true}
+                  />
+                </Box>
+              </DashboardCard>
+            </Grid>
+          </Grid>
+        </TabPanel>
       </Box>
 
-      {/* Main Content */}
-      <Grid container spacing={3} sx={{ mt: 1 }}>
-        {/* Inventory Table */}
-        <Grid item xs={12} md={9}>
-          <TechComponentsInventoryTable 
-            items={filteredItems}
-            onViewDetails={handleViewDetails}
-            onEditItem={handleEditItem}
-            onTransferItem={handleTransferItem}
-            onOrderItem={handleOrderItem}
-            onViewQR={handleViewQR}
-          />
-        </Grid>
-
-        {/* Insights Panel */}
-        <Grid item xs={12} md={3}>
-          <InventoryInsights 
-            recommendations={data.recommendations}
-            onActionClick={handleRecommendationAction}
-          />
-        </Grid>
-      </Grid>
-
-      {/* Advanced Search Drawer */}
+      {/* Drawers and Modals */}
       <Drawer
         anchor="right"
-        open={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        sx={{
-          '& .MuiDrawer-paper': { 
-            width: { xs: '100%', sm: 450 },
-            padding: 2
-          },
+        open={selectedItem !== null}
+        onClose={handleCloseDetails}
+        PaperProps={{
+          sx: { width: { xs: '100%', sm: 500 } },
+        }}
+      >
+        {selectedItem && (
+          <ItemDetailsDrawer item={selectedItem} onClose={handleCloseDetails} />
+        )}
+      </Drawer>
+
+      <Dialog
+        open={addItemOpen}
+        onClose={handleCloseAddItem}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Add New Inventory Item</DialogTitle>
+        <DialogContent>
+          <AddItemModal 
+            onSave={handleSaveItem} 
+            onCancel={handleCloseAddItem} 
+            open={addItemOpen}
+            categories={categories.map((c: InventoryCategory) => ({ id: c.id, name: c.name }))}
+            locations={typedWarehouses.map(w => ({ id: w.id, name: w.name, path: [w.id] }))}
+            onClose={handleCloseAddItem}
+            onAddItem={() => {}}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this item? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={confirmDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Drawer
+        anchor="right"
+        open={filterDrawerOpen}
+        onClose={handleFilterToggle}
+        PaperProps={{
+          sx: { width: { xs: '100%', sm: 450 }, p: 3 }
+        }}
+      >
+        <InventoryFilters 
+          onClose={handleFilterToggle} 
+          categories={categories.map((c: InventoryCategory) => ({ id: c.id, name: c.name }))}
+          onFilterChange={() => {}}
+          onClearFilters={() => {}}
+        />
+      </Drawer>
+
+      <Drawer
+        anchor="right"
+        open={advancedSearchOpen}
+        onClose={handleAdvancedSearchToggle}
+        PaperProps={{
+          sx: { width: { xs: '100%', sm: 600 }, p: 0 }
         }}
       >
         <AdvancedSearchPanel 
-          open={searchOpen}
-          onSearch={handleFilterChange}
-          onSaveSearch={handleSaveFilter}
-          onClose={() => setSearchOpen(false)}
-          savedFilters={data.savedFilters}
-          onLoadSavedFilter={handleLoadSavedFilter}
-          categories={data.categories.map(c => c.name)}
-          suppliers={Array.from(new Set(data.items.map(item => item.supplier)))}
-          locations={data.warehouses.map(w => w.id)}
-          subcategories={Array.from(new Set(data.items.map(item => item.subcategory)))}
-          onClearFilters={handleClearFilters}
+          onClose={handleAdvancedSearchToggle} 
+          savedFilters={[]}
+          onLoadSavedFilter={() => {}}
+          suppliers={[]}
+          categories={[]}
+          subcategories={[]}
+          locations={[]}
           initialFilters={{
             search: '',
             sku: '',
@@ -504,7 +641,7 @@ const Inventory: React.FC = () => {
             categories: [],
             subcategories: [],
             locations: [],
-            stockLevelRange: { min: 0, max: 10000 },
+            stockLevelRange: { min: 0, max: 1000 },
             receivedDateRange: { start: null, end: null },
             lifecycleStatus: [],
             blockchainVerified: null
@@ -512,55 +649,16 @@ const Inventory: React.FC = () => {
         />
       </Drawer>
 
-      {/* Item Details Drawer */}
-      <Drawer
-        anchor="right"
-        open={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
-        sx={{
-          '& .MuiDrawer-paper': { 
-            width: { xs: '100%', sm: 600 },
-            padding: 0
-          },
-        }}
-      >
-        {selectedItem && (
-          <ItemDetailsDrawer 
-            item={selectedItem}
-            onClose={() => setDetailsOpen(false)}
-          />
-        )}
-      </Drawer>
-
-      {/* Snackbar for notifications */}
       <Snackbar
-        open={snackbar.open}
+        open={snackbarOpen}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity}>
-          {snackbar.message}
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
         </Alert>
       </Snackbar>
-
-      {/* Confirmation Dialog */}
-      <Dialog
-        open={confirmDialog.open}
-        onClose={() => handleConfirmDialogClose(false)}
-      >
-        <DialogTitle>{confirmDialog.title}</DialogTitle>
-        <DialogContent>
-          {confirmDialog.message}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => handleConfirmDialogClose(false)}>Cancel</Button>
-          <Button onClick={() => handleConfirmDialogClose(true)} variant="contained" color="primary">
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+    </Box>
   );
 };
 

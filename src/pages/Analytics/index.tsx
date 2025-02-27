@@ -25,11 +25,12 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 // Import components
+import AnalyticsHeader from './components/AnalyticsHeader';
 import AnalyticsCard from './components/AnalyticsCard';
 import SalesChart from './components/SalesChart';
 import ProductPerformance from './components/ProductPerformance';
 import AnalyticsFilters from './components/AnalyticsFilters';
-import { AnalyticsFilters as AnalyticsFiltersType, TimePeriod, ComparisonType } from './types';
+import { AnalyticsFilters as AnalyticsFiltersType, TimePeriod, ComparisonType, BusinessMetrics } from './types';
 
 // Mock data for sales chart
 const monthlySalesData = [
@@ -136,18 +137,18 @@ const productPerformanceData = [
 ];
 
 // Mock data for business metrics
-const businessMetrics = {
-  totalRevenue: 923400,
-  lastMonthRevenue: 115000,
-  totalCost: 553600,
-  grossProfit: 369800,
-  profitMargin: 40.05,
-  totalOrders: 4250,
-  averageOrderValue: 217.27,
-  returnRate: 1.2,
-  totalCustomers: 1850,
-  newCustomers: 320,
-  repeatRate: 68.5,
+const businessMetrics: BusinessMetrics = {
+  totalRevenue: 923000,
+  lastMonthRevenue: 78500,
+  totalCost: 615000,
+  grossProfit: 308000,
+  profitMargin: 0.334,
+  totalOrders: 1245,
+  averageOrderValue: 741,
+  returnRate: 0.023,
+  totalCustomers: 387,
+  newCustomers: 42,
+  repeatRate: 0.68,
 };
 
 // Tab Panel Component
@@ -220,11 +221,10 @@ const ActionButton = styled(Button)(({ theme }) => ({
 const Analytics: React.FC = () => {
   const theme = useTheme();
   const [tabValue, setTabValue] = useState(0);
-  const [timeRange, _setTimeRange] = useState('This Year');
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [filters, setFilters] = useState<AnalyticsFiltersType>({
-    timePeriod: 'last30Days' as TimePeriod,
-    comparison: 'previousPeriod' as ComparisonType,
+    timePeriod: 'last30Days',
+    comparison: 'previousPeriod',
     products: [],
     origins: [],
     customers: [],
@@ -243,23 +243,23 @@ const Analytics: React.FC = () => {
 
   // Handle more menu
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
+    setMenuAnchorEl(event.currentTarget);
   };
 
   const handleMenuClose = () => {
-    setAnchorEl(null);
+    setMenuAnchorEl(null);
   };
 
   // Handle filter changes
   const handleFilterChange = (newFilters: any) => {
-    setFilters(newFilters);
-    // In a real app, you would fetch new data here
+    setFilters({ ...filters, ...newFilters });
+    console.log('Filters updated:', { ...filters, ...newFilters });
   };
 
   const handleClearFilters = () => {
     setFilters({
-      timePeriod: 'last30Days' as TimePeriod,
-      comparison: 'previousPeriod' as ComparisonType,
+      timePeriod: 'last30Days',
+      comparison: 'previousPeriod',
       products: [],
       origins: [],
       customers: [],
@@ -270,77 +270,51 @@ const Analytics: React.FC = () => {
         endDate: null,
       },
     });
-    // In a real app, you would reset data here
   };
 
   const handleSaveReport = () => {
-    // In a real app, this would save the current report configuration
-    alert('Report saved! (This is a mock function)');
+    console.log('Saving report with current configuration');
+    handleMenuClose();
+  };
+
+  const handleExportData = () => {
+    console.log('Exporting data');
+    handleMenuClose();
+  };
+
+  const handleGenerateReport = () => {
+    console.log('Generating PDF report');
+    handleMenuClose();
+  };
+
+  const handleShareReport = () => {
+    console.log('Sharing report');
+    handleMenuClose();
+  };
+
+  const handleSearch = (query: string) => {
+    console.log('Searching for:', query);
   };
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      {/* Page Header */}
-      <SectionHeader sx={{ mb: 4 }}>
-        <Box>
-          <Typography variant="h4">Analytics Dashboard</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Comprehensive analytics and insights for your coffee business
-          </Typography>
-        </Box>
-        <Box>
-          <ActionButton
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            size="small"
-            onClick={() => alert('Download data (mock function)')}
-          >
-            Export
-          </ActionButton>
-          <ActionButton
-            variant="outlined"
-            startIcon={<PrintIcon />}
-            size="small"
-            onClick={() => alert('Print dashboard (mock function)')}
-          >
-            Print
-          </ActionButton>
-          <ActionButton
-            variant="outlined"
-            startIcon={<ShareIcon />}
-            size="small"
-            onClick={() => alert('Share dashboard (mock function)')}
-          >
-            Share
-          </ActionButton>
-          <IconButton onClick={handleMenuClick}>
-            <MoreVertIcon />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleMenuClose}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-          >
-            <MenuItem onClick={handleMenuClose}>Schedule Reports</MenuItem>
-            <MenuItem onClick={handleMenuClose}>Save as Template</MenuItem>
-            <MenuItem onClick={handleMenuClose}>Dashboard Settings</MenuItem>
-          </Menu>
-        </Box>
-      </SectionHeader>
-
-      {/* Filters */}
-      <Paper sx={{ mb: 4, border: `1px solid ${theme.palette.divider}`, borderRadius: 0 }}>
-        <AnalyticsFilters
-          filters={filters}
+    <Container maxWidth="xl">
+      <AnalyticsHeader 
+        metrics={businessMetrics}
+        onSearch={handleSearch}
+        onExportData={handleExportData}
+        onGenerateReport={handleGenerateReport}
+        onSaveReport={handleSaveReport}
+        onShareReport={handleShareReport}
+      />
+      
+      {/* Rest of the component */}
+      <Box sx={{ mb: 4 }}>
+        <AnalyticsFilters 
+          filters={filters} 
           onFilterChange={handleFilterChange}
           onClearFilters={handleClearFilters}
-          onSaveReport={handleSaveReport}
         />
-      </Paper>
+      </Box>
 
       {/* Key Business Metrics */}
       <Typography variant="h6" sx={{ mb: 2 }}>Key Business Metrics</Typography>
@@ -353,10 +327,10 @@ const Analytics: React.FC = () => {
             icon={<AttachMoneyIcon />}
             trend={{
               value: 12.5,
-              label: "vs last period",
+              label: 'vs previous period',
               isPercentage: true
             }}
-            comparePeriod={timeRange}
+            comparePeriod={filters.timePeriod}
             color="primary.main"
           />
         </Grid>
@@ -370,7 +344,7 @@ const Analytics: React.FC = () => {
               label: "vs last period",
               isPercentage: true
             }}
-            comparePeriod={timeRange}
+            comparePeriod={filters.timePeriod}
             color="success.main"
           />
         </Grid>
@@ -381,10 +355,10 @@ const Analytics: React.FC = () => {
             icon={<StorefrontIcon />}
             trend={{
               value: 8.3,
-              label: "vs last period",
+              label: 'vs previous period',
               isPercentage: true
             }}
-            comparePeriod={timeRange}
+            comparePeriod={filters.timePeriod}
             color="info.main"
           />
         </Grid>
@@ -400,7 +374,7 @@ const Analytics: React.FC = () => {
               isPercentage: true,
               isPositiveBetter: false
             }}
-            comparePeriod={timeRange}
+            comparePeriod={filters.timePeriod}
             color="warning.main"
           />
         </Grid>
@@ -447,7 +421,7 @@ const Analytics: React.FC = () => {
                     label: "vs last period",
                     isPercentage: true
                   }}
-                  comparePeriod={timeRange}
+                  comparePeriod={filters.timePeriod}
                   color="primary.main"
                 />
               </Grid>
@@ -461,7 +435,7 @@ const Analytics: React.FC = () => {
                     isPercentage: true,
                     isPositiveBetter: false
                   }}
-                  comparePeriod={timeRange}
+                  comparePeriod={filters.timePeriod}
                   color="success.main"
                 />
               </Grid>
@@ -476,7 +450,7 @@ const Analytics: React.FC = () => {
                     isPercentage: true,
                     isPositiveBetter: false
                   }}
-                  comparePeriod={timeRange}
+                  comparePeriod={filters.timePeriod}
                   color="info.main"
                 />
               </Grid>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   Box, 
   Container, 
@@ -9,13 +9,19 @@ import {
   Chip,
   IconButton,
   Button,
-  Tabs,
-  Tab,
   useMediaQuery,
   Drawer,
   Divider,
   Alert,
-  styled
+  styled,
+  ButtonGroup,
+  Card,
+  CardContent,
+  CardHeader,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import SupplierHeader from './components/SupplierHeader';
 import SupplierHealthDashboard from './components/SupplierHealthDashboard';
@@ -44,6 +50,9 @@ import BusinessIcon from '@mui/icons-material/Business';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 import { 
   mockSuppliers, 
@@ -54,46 +63,58 @@ import {
 } from './mockData';
 
 // Styled components
-const DashboardCard = styled(Paper)(({ theme }) => ({
+const DashboardCard = styled(Card)(({ theme }) => ({
   height: '100%',
-  backgroundColor: theme.palette.background.paper,
   borderRadius: theme.shape.borderRadius,
-  border: `1px solid ${theme.palette.divider}`,
-  boxShadow: 'none',
-  overflow: 'hidden',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
+  transition: 'box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out',
+  '&:hover': {
+    boxShadow: '0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23)',
+  },
 }));
 
-const CardHeader = styled(Box)(({ theme }) => ({
-  padding: theme.spacing(2),
-  borderBottom: `1px solid ${theme.palette.divider}`,
+const MetricCard = styled(DashboardCard)(({ theme }) => ({
+  cursor: 'pointer',
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.2)',
+  },
+}));
+
+const NavButton = styled(Button)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius,
+  padding: theme.spacing(1, 2),
+  textTransform: 'none',
+  fontWeight: 500,
+  fontSize: '0.9rem',
+}));
+
+const ViewToggleButton = styled(Button)(({ theme }) => ({
+  textTransform: 'none',
+  padding: theme.spacing(0.5, 1.5),
+  minWidth: 'auto',
+}));
+
+const SectionHeader = styled(Box)(({ theme }) => ({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  backgroundColor: theme.palette.background.default,
+  marginBottom: theme.spacing(2),
 }));
 
-const CardContent = styled(Box)(({ theme }) => ({
-  padding: theme.spacing(2),
-}));
-
-const TabIcon = styled(Box)(({ theme }) => ({
-  display: 'flex', 
-  alignItems: 'center', 
-  '& > svg': {
-    marginRight: theme.spacing(1),
-    fontSize: '1.2rem',
-  }
-}));
-
+// Main component
 const SuppliersPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [activeTab, setActiveTab] = useState(0);
+  
+  // State
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
   const [activeOrderStatusFilter, setActiveOrderStatusFilter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'map' | 'analytics' | 'risk'>('table');
+  const [activeSection, setActiveSection] = useState<'overview' | 'suppliers' | 'analytics' | 'risk'>('overview');
+  const [viewMenuAnchorEl, setViewMenuAnchorEl] = useState<null | HTMLElement>(null);
   
   // Get the selected supplier
   const selectedSupplier = selectedSupplierId ? 
@@ -112,6 +133,25 @@ const SuppliersPage: React.FC = () => {
   // Handler for order status filter changes
   const handleOrderStatusFilterChange = (status: string | null) => {
     setActiveOrderStatusFilter(status === activeOrderStatusFilter ? null : status);
+  };
+
+  // Handler for metric card clicks
+  const handleMetricCardClick = (section: 'suppliers' | 'analytics' | 'risk') => {
+    setActiveSection(section);
+  };
+
+  // Handler for view menu
+  const handleViewMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setViewMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleViewMenuClose = () => {
+    setViewMenuAnchorEl(null);
+  };
+
+  const handleViewModeChange = (mode: 'table' | 'map' | 'analytics' | 'risk') => {
+    setViewMode(mode);
+    handleViewMenuClose();
   };
 
   // Various action handlers
@@ -134,66 +174,325 @@ const SuppliersPage: React.FC = () => {
   const handleViewAllMetrics = () => console.log('View all metrics');
   const handleFilterChange = (filters: any) => console.log('Filter changed:', filters);
 
-  // Render the active view content based on selected tab and view mode
-  const renderContent = () => {
-    if (activeTab === 0) {
-      switch (viewMode) {
-        case 'table':
-          return (
-            <SupplierTable 
-              suppliers={mockSuppliers}
-              onViewDetails={handleSupplierSelect}
-              onContactSupplier={handleContactSupplier}
-              onCreateOrder={handleCreateOrder}
-              onPaySupplier={handleMakePayment}
-              onExpandRow={(supplierId) => setSelectedSupplierId(supplierId)}
-              expandedSupplierId={selectedSupplierId}
+  // Render the overview dashboard
+  const renderOverviewDashboard = () => (
+    <Grid container spacing={3}>
+      {/* KPI Cards Row */}
+      <Grid item xs={12} sm={6} md={3}>
+        <MetricCard onClick={() => handleMetricCardClick('suppliers')}>
+          <CardContent sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Box
+                sx={{
+                  mr: 1.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  backgroundColor: 'primary.lighter',
+                }}
+              >
+                <BusinessIcon color="primary" />
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">Total Suppliers</Typography>
+                <Typography variant="h4" fontWeight="bold">{mockSupplierMetrics.totalCount}</Typography>
+              </Box>
+            </Box>
+            <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Chip 
+                size="small" 
+                label={`${mockSupplierMetrics.activeSuppliers} active`} 
+                color="primary"
+              />
+              <ArrowForwardIcon fontSize="small" color="action" />
+            </Box>
+          </CardContent>
+        </MetricCard>
+      </Grid>
+      
+      <Grid item xs={12} sm={6} md={3}>
+        <MetricCard onClick={() => handleMetricCardClick('analytics')}>
+          <CardContent sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Box
+                sx={{
+                  mr: 1.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  backgroundColor: 'success.lighter',
+                }}
+              >
+                <BarChartIcon color="success" />
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">Average Performance</Typography>
+                <Typography variant="h4" fontWeight="bold">{mockSupplierMetrics.averagePerformance}%</Typography>
+              </Box>
+            </Box>
+            <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Chip 
+                size="small" 
+                label="+3.2% this month" 
+                color="success"
+              />
+              <ArrowForwardIcon fontSize="small" color="action" />
+            </Box>
+          </CardContent>
+        </MetricCard>
+      </Grid>
+      
+      <Grid item xs={12} sm={6} md={3}>
+        <MetricCard onClick={() => handleMetricCardClick('risk')}>
+          <CardContent sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Box
+                sx={{
+                  mr: 1.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  backgroundColor: 'warning.lighter',
+                }}
+              >
+                <VerifiedUserIcon color="warning" />
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">Verified Suppliers</Typography>
+                <Typography variant="h4" fontWeight="bold">{mockSupplierMetrics.verifiedCount}</Typography>
+              </Box>
+            </Box>
+            <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Chip 
+                size="small" 
+                label={`${Math.round((mockSupplierMetrics.verifiedCount / mockSupplierMetrics.totalCount) * 100)}% of total`} 
+                color="warning"
+              />
+              <ArrowForwardIcon fontSize="small" color="action" />
+            </Box>
+          </CardContent>
+        </MetricCard>
+      </Grid>
+      
+      <Grid item xs={12} sm={6} md={3}>
+        <MetricCard onClick={() => handleMetricCardClick('suppliers')}>
+          <CardContent sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Box
+                sx={{
+                  mr: 1.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  backgroundColor: 'info.lighter',
+                }}
+              >
+                <AccountBalanceWalletIcon color="info" />
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">Smart Contracts</Typography>
+                <Typography variant="h4" fontWeight="bold">{mockSupplierMetrics.smartContractCount}</Typography>
+              </Box>
+            </Box>
+            <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Chip 
+                size="small" 
+                label={`${mockSupplierMetrics.annualSavings}% savings`} 
+                color="info"
+              />
+              <ArrowForwardIcon fontSize="small" color="action" />
+            </Box>
+          </CardContent>
+        </MetricCard>
+      </Grid>
+
+      {/* Order Status Panel */}
+      <Grid item xs={12}>
+        <DashboardCard>
+          <CardHeader title="Order Status" />
+          <CardContent>
+            <SupplierOrderStatusPanel
+              orderStatuses={mockOrderStatuses}
+              activeFilter={activeOrderStatusFilter}
+              onStatusClick={handleOrderStatusFilterChange}
             />
-          );
-        case 'map':
-          return (
-            <SupplierMapView 
-              suppliers={mockSuppliers}
-              onRegionFilter={handleRegionFilter}
+          </CardContent>
+        </DashboardCard>
+      </Grid>
+
+      {/* Key Supplier Cards */}
+      <Grid item xs={12}>
+        <DashboardCard>
+          <CardHeader 
+            title="Key Suppliers" 
+            action={
+              <Button 
+                endIcon={<ArrowForwardIcon />} 
+                onClick={() => handleMetricCardClick('suppliers')}
+                sx={{ textTransform: 'none' }}
+              >
+                View All
+              </Button>
+            }
+          />
+          <CardContent>
+            <KeySupplierCards 
+              suppliers={mockSuppliers.slice(0, 4)} 
               onSupplierSelect={handleSupplierSelect}
-              onViewFullscreen={handleViewFullscreen}
             />
-          );
-        case 'analytics':
-          return (
+          </CardContent>
+        </DashboardCard>
+      </Grid>
+    </Grid>
+  );
+
+  // Render the suppliers section
+  const renderSuppliersSection = () => {
+    // Convert mockSuppliers to ExtendedSupplier type
+    const extendedSuppliers = mockSuppliers.map(supplier => ({
+      ...supplier,
+      contactName: supplier.contactInfo?.primaryContact?.name || '',
+      email: supplier.contactInfo?.email || '',
+      phone: supplier.contactInfo?.phone || '',
+      status: supplier.status || 'Active',
+      performanceScore: supplier.metrics?.onTimeDelivery || 0,
+      categories: supplier.categories || [],
+      annualSpend: supplier.financials?.annualSpend || 0
+    }));
+
+    return (
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <SectionHeader>
+            <Typography variant="h6">All Suppliers</Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button 
+                startIcon={<FilterListIcon />} 
+                variant={showFilters ? "contained" : "outlined"} 
+                size="small"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                Filters
+              </Button>
+              <IconButton size="small" onClick={handleViewMenuOpen}>
+                <MoreVertIcon />
+              </IconButton>
+            </Box>
+          </SectionHeader>
+        </Grid>
+
+        {/* Filters (collapsible) */}
+        {showFilters && (
+          <Grid item xs={12}>
+            <DashboardCard>
+              <CardContent>
+                <SupplierFilter
+                  onFilterChange={handleFilterChange}
+                  onSaveFilter={() => {}}
+                  onLoadFilter={() => {}}
+                  savedFilters={[]}
+                />
+              </CardContent>
+            </DashboardCard>
+          </Grid>
+        )}
+
+        {/* Main Content and Sidebar */}
+        <Grid item xs={12} md={8}>
+          <DashboardCard>
+            <CardContent>
+              {viewMode === 'table' && (
+                <SupplierTable 
+                  suppliers={extendedSuppliers}
+                  onViewDetails={handleSupplierSelect}
+                  onContactSupplier={handleContactSupplier}
+                  onCreateOrder={handleCreateOrder}
+                  onPaySupplier={handleMakePayment}
+                  onExpandRow={(supplierId) => setSelectedSupplierId(supplierId)}
+                  expandedSupplierId={selectedSupplierId}
+                />
+              )}
+              {viewMode === 'map' && (
+                <SupplierMapView 
+                  suppliers={mockSuppliers}
+                  onRegionFilter={handleRegionFilter}
+                  onSupplierSelect={handleSupplierSelect}
+                  onViewFullscreen={handleViewFullscreen}
+                />
+              )}
+            </CardContent>
+          </DashboardCard>
+        </Grid>
+        
+        {!isMobile && (
+          <Grid item xs={12} md={4}>
+            <DashboardCard sx={{ height: '100%' }}>
+              <CardHeader title="Supplier Details" />
+              <CardContent>
+                {renderSupplierDetails()}
+              </CardContent>
+            </DashboardCard>
+          </Grid>
+        )}
+      </Grid>
+    );
+  };
+
+  // Render the analytics section
+  const renderAnalyticsSection = () => (
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <SectionHeader>
+          <Typography variant="h6">Supplier Analytics</Typography>
+        </SectionHeader>
+      </Grid>
+      <Grid item xs={12}>
+        <DashboardCard>
+          <CardContent>
             <SupplierAnalytics 
               suppliers={mockSuppliers}
               onTimeRangeChange={handleTimeRangeChange}
               onExportData={handleExportData}
               onFilterChange={handleFilterChange}
             />
-          );
-        case 'risk':
-          return (
+          </CardContent>
+        </DashboardCard>
+      </Grid>
+    </Grid>
+  );
+
+  // Render the risk management section
+  const renderRiskSection = () => (
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <SectionHeader>
+          <Typography variant="h6">Risk Management</Typography>
+        </SectionHeader>
+      </Grid>
+      <Grid item xs={12}>
+        <DashboardCard>
+          <CardContent>
             <SupplierRiskManagement 
               suppliers={mockSuppliers}
               onSupplierSelect={handleSupplierSelect}
             />
-          );
-      }
-    } else if (activeTab === 1) {
-      return (
-        <SupplierAnalytics 
-          suppliers={mockSuppliers}
-          onTimeRangeChange={handleTimeRangeChange}
-          onExportData={handleExportData}
-          onFilterChange={handleFilterChange}
-        />
-      );
-    } else if (activeTab === 2) {
-      return (
-        <SupplierRiskManagement 
-          suppliers={mockSuppliers}
-          onSupplierSelect={handleSupplierSelect}
-        />
-      );
-    }
-  };
+          </CardContent>
+        </DashboardCard>
+      </Grid>
+    </Grid>
+  );
 
   // Render the supplier details view
   const renderSupplierDetails = () => {
@@ -235,7 +534,13 @@ const SuppliersPage: React.FC = () => {
         )}
         
         <ComponentQualityTracking 
-          qualityMetrics={mockQualityMetrics}
+          qualityMetrics={{
+            ...mockQualityMetrics,
+            averageFailureRate: mockQualityMetrics.failureRate || 0,
+            failureRateTrend: mockQualityMetrics.failureRateTrend || [],
+            rmaTrend: mockQualityMetrics.rmaTrend || [],
+            mtbfTrend: mockQualityMetrics.mtbfTrend || [],
+          }}
           onViewIncident={handleViewIncident}
           onViewAllMetrics={handleViewAllMetrics}
         />
@@ -254,319 +559,78 @@ const SuppliersPage: React.FC = () => {
         onSearch={handleSearch}
       />
 
-      {/* KPI/Metrics Row */}
-      <Grid container spacing={3} sx={{ mt: 3, mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <DashboardCard>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Box
-                  sx={{
-                    mr: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    backgroundColor: 'primary.lighter',
-                  }}
-                >
-                  <BusinessIcon color="primary" />
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Total Suppliers</Typography>
-                  <Typography variant="h4" fontWeight="bold">{mockSupplierMetrics.totalCount}</Typography>
-                </Box>
-              </Box>
-              <Box sx={{ mt: 'auto' }}>
-                <Chip 
-                  size="small" 
-                  label={`${mockSupplierMetrics.activeSuppliers} active`} 
-                  color="primary"
-                  sx={{ mr: 1 }}
-                />
-              </Box>
-            </CardContent>
-          </DashboardCard>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <DashboardCard>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Box
-                  sx={{
-                    mr: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    backgroundColor: 'success.lighter',
-                  }}
-                >
-                  <BarChartIcon color="success" />
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Average Performance</Typography>
-                  <Typography variant="h4" fontWeight="bold">{mockSupplierMetrics.averagePerformance}%</Typography>
-                </Box>
-              </Box>
-              <Box sx={{ mt: 'auto' }}>
-                <Chip 
-                  size="small" 
-                  label="+3.2% this month" 
-                  color="success"
-                />
-              </Box>
-            </CardContent>
-          </DashboardCard>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <DashboardCard>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Box
-                  sx={{
-                    mr: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    backgroundColor: 'warning.lighter',
-                  }}
-                >
-                  <VerifiedUserIcon color="warning" />
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Verified Suppliers</Typography>
-                  <Typography variant="h4" fontWeight="bold">{mockSupplierMetrics.verifiedCount}</Typography>
-                </Box>
-              </Box>
-              <Box sx={{ mt: 'auto' }}>
-                <Chip 
-                  size="small" 
-                  label={`${Math.round((mockSupplierMetrics.verifiedCount / mockSupplierMetrics.totalCount) * 100)}% of total`} 
-                  color="warning"
-                />
-              </Box>
-            </CardContent>
-          </DashboardCard>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <DashboardCard>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Box
-                  sx={{
-                    mr: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    backgroundColor: 'info.lighter',
-                  }}
-                >
-                  <AccountBalanceWalletIcon color="info" />
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">Smart Contracts</Typography>
-                  <Typography variant="h4" fontWeight="bold">{mockSupplierMetrics.smartContractCount}</Typography>
-                </Box>
-              </Box>
-              <Box sx={{ mt: 'auto' }}>
-                <Chip 
-                  size="small" 
-                  label={`${mockSupplierMetrics.annualSavings}% savings`} 
-                  color="info"
-                />
-              </Box>
-            </CardContent>
-          </DashboardCard>
-        </Grid>
-      </Grid>
-
-      {/* Order Status Panel */}
-      <DashboardCard sx={{ mb: 3 }}>
-        <CardHeader>
-          <Typography variant="subtitle1" fontWeight="medium">Order Status</Typography>
-        </CardHeader>
-        <CardContent>
-          <SupplierOrderStatusPanel
-            orderStatuses={mockOrderStatuses}
-            activeFilter={activeOrderStatusFilter}
-            onStatusClick={handleOrderStatusFilterChange}
-          />
-        </CardContent>
-      </DashboardCard>
-
-      {/* Main Navigation Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={activeTab} 
-          onChange={(_, newValue) => setActiveTab(newValue)}
-          aria-label="main navigation tabs"
+      {/* Sub-navigation */}
+      <Box sx={{ 
+        display: 'flex', 
+        gap: 1, 
+        mt: 3, 
+        mb: 3, 
+        borderBottom: `1px solid ${theme.palette.divider}`,
+        pb: 1
+      }}>
+        <NavButton 
+          variant={activeSection === 'overview' ? 'contained' : 'text'} 
+          onClick={() => setActiveSection('overview')}
         >
-          <Tab 
-            label={
-              <TabIcon>
-                <BusinessIcon /> Suppliers
-              </TabIcon>
-            } 
-          />
-          <Tab 
-            label={
-              <TabIcon>
-                <BarChartIcon /> Analytics
-              </TabIcon>
-            } 
-          />
-          <Tab 
-            label={
-              <TabIcon>
-                <SecurityIcon /> Risk Management
-              </TabIcon>
-            } 
-          />
-        </Tabs>
+          Overview
+        </NavButton>
+        <NavButton 
+          variant={activeSection === 'suppliers' ? 'contained' : 'text'} 
+          onClick={() => setActiveSection('suppliers')}
+        >
+          All Suppliers
+        </NavButton>
+        <NavButton 
+          variant={activeSection === 'analytics' ? 'contained' : 'text'} 
+          onClick={() => setActiveSection('analytics')}
+        >
+          Analytics
+        </NavButton>
+        <NavButton 
+          variant={activeSection === 'risk' ? 'contained' : 'text'} 
+          onClick={() => setActiveSection('risk')}
+        >
+          Risk Management
+        </NavButton>
       </Box>
 
-      {/* Content Area */}
-      {activeTab === 0 && (
-        <Grid container spacing={3}>
-          {/* View Selection and Filtering */}
-          <Grid item xs={12}>
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              mb: 2,
-              flexWrap: 'wrap',
-              gap: 1
-            }}>
-              <Tabs 
-                value={['table', 'map', 'analytics', 'risk'].indexOf(viewMode)} 
-                onChange={(_, newValue) => {
-                  const modes = ['table', 'map', 'analytics', 'risk'] as const;
-                  setViewMode(modes[newValue]);
-                }}
-                aria-label="view mode tabs"
-              >
-                <Tab 
-                  label={
-                    <TabIcon>
-                      <TableChartIcon /> Table
-                    </TabIcon>
-                  }
-                />
-                <Tab 
-                  label={
-                    <TabIcon>
-                      <MapIcon /> Map
-                    </TabIcon>
-                  }
-                />
-                <Tab 
-                  label={
-                    <TabIcon>
-                      <AssessmentIcon /> Analytics
-                    </TabIcon>
-                  }
-                />
-                <Tab 
-                  label={
-                    <TabIcon>
-                      <SecurityIcon /> Risk
-                    </TabIcon>
-                  }
-                />
-              </Tabs>
-              
-              <Button 
-                startIcon={<FilterListIcon />} 
-                variant={showFilters ? "contained" : "outlined"} 
-                size="small"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                Filters
-              </Button>
-            </Box>
-          </Grid>
+      {/* Main Content Area */}
+      {activeSection === 'overview' && renderOverviewDashboard()}
+      {activeSection === 'suppliers' && renderSuppliersSection()}
+      {activeSection === 'analytics' && renderAnalyticsSection()}
+      {activeSection === 'risk' && renderRiskSection()}
 
-          {/* Filters (collapsible) */}
-          {showFilters && (
-            <Grid item xs={12}>
-              <DashboardCard sx={{ mb: 3 }}>
-                <CardContent>
-                  <SupplierFilter
-                    onFilterChange={handleFilterChange}
-                    onSaveFilter={() => {}}
-                    onLoadFilter={() => {}}
-                    savedFilters={[]}
-                  />
-                </CardContent>
-              </DashboardCard>
-            </Grid>
-          )}
-
-          {/* Main Content and Sidebar */}
-          <Grid item xs={12} md={8}>
-            <DashboardCard>
-              <CardHeader>
-                <Typography variant="subtitle1" fontWeight="medium">
-                  {viewMode === 'table' && 'Supplier List'}
-                  {viewMode === 'map' && 'Supplier Geography'}
-                  {viewMode === 'analytics' && 'Supplier Analytics'}
-                  {viewMode === 'risk' && 'Supplier Risk Assessment'}
-                </Typography>
-              </CardHeader>
-              <CardContent>
-                {renderContent()}
-              </CardContent>
-            </DashboardCard>
-          </Grid>
-          
-          {!isMobile && (
-            <Grid item xs={12} md={4}>
-              <DashboardCard sx={{ height: '100%' }}>
-                <CardHeader>
-                  <Typography variant="subtitle1" fontWeight="medium">Supplier Details</Typography>
-                  {selectedSupplier && (
-                    <Typography variant="body2" color="text.secondary">
-                      {selectedSupplier.name}
-                    </Typography>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  {renderSupplierDetails()}
-                </CardContent>
-              </DashboardCard>
-            </Grid>
-          )}
-        </Grid>
-      )}
-
-      {/* Full-width content for other tabs */}
-      {activeTab > 0 && (
-        <DashboardCard>
-          <CardHeader>
-            <Typography variant="subtitle1" fontWeight="medium">
-              {activeTab === 1 ? 'Supplier Analytics' : 'Risk Management'}
-            </Typography>
-          </CardHeader>
-          <CardContent>
-            {renderContent()}
-          </CardContent>
-        </DashboardCard>
-      )}
+      {/* View Mode Menu */}
+      <Menu
+        anchorEl={viewMenuAnchorEl}
+        open={Boolean(viewMenuAnchorEl)}
+        onClose={handleViewMenuClose}
+      >
+        <MenuItem onClick={() => handleViewModeChange('table')}>
+          <ListItemIcon>
+            <TableChartIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Table View</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleViewModeChange('map')}>
+          <ListItemIcon>
+            <MapIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Map View</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleViewModeChange('analytics')}>
+          <ListItemIcon>
+            <AssessmentIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Analytics View</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleViewModeChange('risk')}>
+          <ListItemIcon>
+            <SecurityIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Risk View</ListItemText>
+        </MenuItem>
+      </Menu>
 
       {/* Mobile drawer for supplier details */}
       <Drawer

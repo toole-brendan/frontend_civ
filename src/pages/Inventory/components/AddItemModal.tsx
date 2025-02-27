@@ -54,6 +54,8 @@ interface AddItemModalProps {
   locations: Array<{ id: string; name: string; path: string[] }>;
   onClose: () => void;
   onAddItem: (item: NewInventoryItem) => void;
+  onSave: (item: Partial<TechComponentsInventoryItem>) => void;
+  onCancel: () => void;
 }
 
 // Styled components
@@ -87,6 +89,8 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
   locations,
   onClose,
   onAddItem,
+  onSave,
+  onCancel
 }) => {
   // State for the active step
   const [activeStep, setActiveStep] = useState(0);

@@ -29,11 +29,11 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { InventoryFilters, SavedFilter } from '../types';
 
 interface AdvancedSearchPanelProps {
-  open: boolean;
   onClose: () => void;
-  onSearch: (filters: InventoryFilters) => void;
-  onSaveSearch: (name: string, filters: InventoryFilters) => void;
-  onClearFilters: () => void;
+  open?: boolean;
+  onSearch?: (filters: InventoryFilters) => void;
+  onSaveSearch?: (name: string, filters: InventoryFilters) => void;
+  onClearFilters?: () => void;
   savedFilters: SavedFilter[];
   onLoadSavedFilter: (filter: SavedFilter) => void;
   suppliers: string[];
@@ -44,11 +44,11 @@ interface AdvancedSearchPanelProps {
 }
 
 export const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
-  open,
   onClose,
-  onSearch,
-  onSaveSearch,
-  onClearFilters,
+  open = false,
+  onSearch = () => {},
+  onSaveSearch = (name, filters) => {},
+  onClearFilters = () => {},
   savedFilters,
   onLoadSavedFilter,
   suppliers,

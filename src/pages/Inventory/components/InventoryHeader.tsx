@@ -4,6 +4,8 @@ import {
   Typography,
   Button,
   IconButton,
+  InputAdornment,
+  TextField,
   Badge,
   Chip,
   Menu,
@@ -12,15 +14,23 @@ import {
   ListItemText,
   Divider,
   useTheme,
-  alpha
+  alpha,
+  Paper,
+  Tooltip,
+  Stack
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import TuneIcon from '@mui/icons-material/Tune';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
+import SettingsIcon from '@mui/icons-material/Settings';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import PageHeader from '../../../components/common/PageHeader';
 import { InventoryMetrics } from '../types';
 
 interface InventoryHeaderProps {
@@ -31,6 +41,9 @@ interface InventoryHeaderProps {
   onAddItemClick: () => void;
   onImportClick: () => void;
   onExportClick: () => void;
+  onScanClick?: () => void;
+  onSettingsClick?: () => void;
+  onSearch?: (query: string) => void;
 }
 
 export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
@@ -40,11 +53,15 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   onFilterClick,
   onAddItemClick,
   onImportClick,
-  onExportClick
+  onExportClick,
+  onScanClick = () => {},
+  onSettingsClick = () => {},
+  onSearch = () => {}
 }) => {
   const theme = useTheme();
   const [importExportAnchorEl, setImportExportAnchorEl] = useState<null | HTMLElement>(null);
   const importExportMenuOpen = Boolean(importExportAnchorEl);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleImportExportClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setImportExportAnchorEl(event.currentTarget);
@@ -64,110 +81,143 @@ export const InventoryHeader: React.FC<InventoryHeaderProps> = ({
     onExportClick();
   };
 
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  };
+
+  const handleSearchSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    onSearch(searchQuery);
+  };
+
   return (
-    <Box sx={{ mb: 4 }}>
-      {/* Header with title and stats */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+    <PageHeader>
+      {/* Title and Stats Row */}
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          mb: 2,
+        }}
+      >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-            Inventory Management
-            <Chip 
-              icon={<VerifiedIcon fontSize="small" />}
-              label="Blockchain Verified"
-              size="small"
-              color="success"
-              sx={{ ml: 2, height: 24 }}
-            />
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Typography variant="h4" fontWeight="bold" color="primary">
+              Inventory Management
+            </Typography>
+            <Tooltip title="All inventory items are verified on blockchain for authenticity and chain of custody">
+              <Chip 
+                icon={<VerifiedIcon fontSize="small" />}
+                label="Blockchain Verified"
+                size="small"
+                color="success"
+                sx={{ ml: 2, height: 24 }}
+              />
+            </Tooltip>
+          </Box>
           <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5 }}>
-            {metrics.totalSKUs.toLocaleString()} SKUs | ${metrics.totalValue.toLocaleString()} Total Value
+            {metrics.totalSKUs.toLocaleString()} Items | {metrics.slowMovingItems} Low Stock | ${metrics.totalValue.toLocaleString()} Total Value
           </Typography>
         </Box>
-        <Box>
-          <Button
-            variant="outlined"
-            startIcon={<SearchIcon />}
-            onClick={onAdvancedSearchClick}
-            sx={{ mr: 1 }}
+        <form onSubmit={handleSearchSubmit}>
+          <TextField
+            size="small"
+            placeholder="Search inventory..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            sx={{ width: 250 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton size="small">
+                    <TuneIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+          />
+        </form>
+      </Box>
+
+      {/* Actions Row */}
+      <Stack 
+        direction="row" 
+        spacing={2} 
+        sx={{ 
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Stack direction="row" spacing={2}>
+          <Button 
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={onAddItemClick}
+            sx={{ 
+              backgroundColor: theme.palette.primary.main,
+              '&:hover': {
+                backgroundColor: theme.palette.primary.dark,
+              }
+            }}
           >
-            Advanced Search
+            Add New Item
           </Button>
-          <Button
+          <Button 
             variant="outlined"
+            startIcon={<QrCodeScannerIcon />}
+            onClick={onScanClick}
+          >
+            Scan Item
+          </Button>
+          <Button 
+            variant={activeFilters > 0 ? "contained" : "outlined"}
             startIcon={<FilterListIcon />}
             onClick={onFilterClick}
-            sx={{ mr: 1 }}
             color={activeFilters > 0 ? 'primary' : 'inherit'}
             endIcon={activeFilters > 0 ? (
-              <Badge badgeContent={activeFilters} color="primary" sx={{ ml: 1 }}>
+              <Badge badgeContent={activeFilters} color="error">
                 <Box />
               </Badge>
             ) : undefined}
           >
             Filters
           </Button>
-          <Button
+          <Button 
             variant="outlined"
-            startIcon={<MoreVertIcon />}
-            onClick={handleImportExportClick}
-            sx={{ mr: 1 }}
+            startIcon={<FileUploadIcon />}
+            onClick={onImportClick}
           >
-            Import/Export
+            Import
           </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={onAddItemClick}
+          <Button 
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={onExportClick}
           >
-            Add New Item
+            Export
           </Button>
-        </Box>
-      </Box>
-
-      {/* Import/Export Menu */}
-      <Menu
-        anchorEl={importExportAnchorEl}
-        open={importExportMenuOpen}
-        onClose={handleImportExportClose}
-        PaperProps={{
-          elevation: 3,
-          sx: { width: 250, mt: 1 }
-        }}
-      >
-        <MenuItem onClick={handleImportClick}>
-          <ListItemIcon>
-            <FileUploadIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Import from CSV</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={handleImportClick}>
-          <ListItemIcon>
-            <FileUploadIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Import from ERP</ListItemText>
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={handleExportClick}>
-          <ListItemIcon>
-            <FileDownloadIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Export to CSV</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={handleExportClick}>
-          <ListItemIcon>
-            <FileDownloadIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Export to Excel</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={handleExportClick}>
-          <ListItemIcon>
-            <FileDownloadIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Export to ERP</ListItemText>
-        </MenuItem>
-      </Menu>
-    </Box>
+        </Stack>
+        <Stack direction="row" spacing={1}>
+          <Tooltip title="Inventory Settings">
+            <IconButton onClick={onSettingsClick}>
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Learn more about inventory management">
+            <IconButton>
+              <HelpOutlineIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      </Stack>
+    </PageHeader>
   );
 };
 

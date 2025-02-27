@@ -2,7 +2,6 @@ import React from 'react';
 import { 
   Box, 
   Typography, 
-  Paper, 
   Avatar, 
   Chip, 
   IconButton, 
@@ -20,15 +19,31 @@ import EmailIcon from '@mui/icons-material/Email';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import BusinessIcon from '@mui/icons-material/Business';
 import { Supplier } from '../types';
+import StandardCard from './shared/StandardCard';
+import { getPerformanceColor, getVerificationColor } from '../utils/statusColors';
+
+// Extended supplier type with UI-specific properties
+interface ExtendedSupplier extends Supplier {
+  logo?: string;
+  headquarters?: string;
+  performanceScore?: number;
+  percentOfTotalSpend?: number;
+  annualSpend?: number;
+  onTimeDeliveryRate?: number;
+  categories?: string[];
+  contractExpiration?: string;
+  blockchainVerificationStatus?: string;
+  shellTokenEnabled?: boolean;
+}
 
 interface KeySupplierCardsProps {
-  suppliers: Supplier[];
-  onContactSupplier: (supplier: Supplier) => void;
-  onCreateOrder: (supplier: Supplier) => void;
-  onPaySupplier: (supplier: Supplier) => void;
-  onViewDetails: (supplier: Supplier) => void;
+  suppliers: ExtendedSupplier[];
+  onContactSupplier: (supplier: ExtendedSupplier) => void;
+  onCreateOrder: (supplier: ExtendedSupplier) => void;
+  onPaySupplier: (supplier: ExtendedSupplier) => void;
+  onViewDetails: (supplier: ExtendedSupplier) => void;
 }
 
 const KeySupplierCards: React.FC<KeySupplierCardsProps> = ({
@@ -40,23 +55,16 @@ const KeySupplierCards: React.FC<KeySupplierCardsProps> = ({
 }) => {
   const theme = useTheme();
 
-  const getStatusColor = (score: number) => {
-    if (score >= 95) return theme.palette.success.main;
-    if (score >= 90) return theme.palette.success.light;
-    if (score >= 85) return theme.palette.warning.main;
-    return theme.palette.error.main;
-  };
-
   const getVerificationStatusIcon = (status: string) => {
     switch (status) {
       case 'FULLY_VERIFIED':
-        return <VerifiedIcon fontSize="small" sx={{ color: theme.palette.success.main }} />;
+        return <VerifiedIcon fontSize="small" sx={{ color: getVerificationColor(theme, 'VERIFIED').main }} />;
       case 'PARTIALLY_VERIFIED':
-        return <VerifiedIcon fontSize="small" sx={{ color: theme.palette.warning.main }} />;
+        return <VerifiedIcon fontSize="small" sx={{ color: getVerificationColor(theme, 'PENDING').main }} />;
       case 'VERIFICATION_PENDING':
-        return <WarningIcon fontSize="small" sx={{ color: theme.palette.warning.main }} />;
+        return <WarningIcon fontSize="small" sx={{ color: getVerificationColor(theme, 'PENDING').main }} />;
       default:
-        return <WarningIcon fontSize="small" sx={{ color: theme.palette.error.main }} />;
+        return <WarningIcon fontSize="small" sx={{ color: getVerificationColor(theme, 'REJECTED').main }} />;
     }
   };
 
@@ -74,18 +82,11 @@ const KeySupplierCards: React.FC<KeySupplierCardsProps> = ({
   };
 
   return (
-    <Box sx={{ mb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6" fontWeight="medium" color="text.primary">
-          Key Supplier Cards
-        </Typography>
-        <Tooltip title="Showing top 5 suppliers by annual spend">
-          <IconButton size="small">
-            <HelpOutlineIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </Box>
-
+    <StandardCard 
+      title="Key Supplier Cards" 
+      tooltip="Showing top 5 suppliers by annual spend"
+      icon={<BusinessIcon color="primary" />}
+    >
       <Box
         sx={{
           display: 'flex',
@@ -100,160 +101,172 @@ const KeySupplierCards: React.FC<KeySupplierCardsProps> = ({
             borderRadius: 4,
           },
           '&::-webkit-scrollbar-thumb': {
-            backgroundColor: theme.palette.grey[400],
+            backgroundColor: theme.palette.grey[300],
             borderRadius: 4,
+            '&:hover': {
+              backgroundColor: theme.palette.grey[400],
+            },
           },
         }}
       >
-        {suppliers.map((supplier) => (
-          <Paper
+        {suppliers.slice(0, 5).map((supplier) => (
+          <Box
             key={supplier.id}
-            elevation={0}
             sx={{
-              width: 300,
               minWidth: 300,
-              p: 2,
+              maxWidth: 350,
+              flex: '0 0 auto',
               border: `1px solid ${theme.palette.divider}`,
-              borderRadius: 1,
+              borderRadius: theme.shape.borderRadius,
+              overflow: 'hidden',
+              backgroundColor: theme.palette.background.paper,
+              transition: 'box-shadow 0.3s ease, transform 0.2s ease',
               '&:hover': {
-                boxShadow: theme.shadows[3],
-                borderColor: theme.palette.primary.light,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                transform: 'translateY(-4px)',
               },
-              transition: 'all 0.3s ease',
             }}
           >
-            {/* Header */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Avatar
-                src={supplier.logo}
-                alt={supplier.name}
-                variant="rounded"
-                sx={{ width: 48, height: 48, mr: 2 }}
-              />
-              <Box>
-                <Typography variant="h6" fontWeight="bold">
-                  {supplier.name}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <LocationOnIcon fontSize="small" sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
-                  <Typography variant="body2" color="text.secondary">
-                    {supplier.headquarters}
+            {/* Card Header */}
+            <Box sx={{ p: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar
+                  src={supplier.logo}
+                  alt={supplier.name}
+                  variant="rounded"
+                  sx={{ width: 48, height: 48, mr: 2 }}
+                />
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography variant="subtitle1" fontWeight="medium" noWrap>
+                    {supplier.name}
                   </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <LocationOnIcon fontSize="small" sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
+                    <Typography variant="body2" color="text.secondary">
+                      {supplier.headquarters || supplier.contactInfo.address.city + ', ' + supplier.contactInfo.address.country}
+                    </Typography>
+                  </Box>
                 </Box>
               </Box>
+              
+              <Box sx={{ mb: 2 }}>
+                <Chip
+                  label={`Performance: ${supplier.performanceScore || supplier.performance.overall}/100`}
+                  size="small"
+                  sx={{
+                    backgroundColor: getPerformanceColor(theme, supplier.performanceScore || supplier.performance.overall).main,
+                    color: getPerformanceColor(theme, supplier.performanceScore || supplier.performance.overall).contrastText,
+                    fontWeight: 'bold',
+                  }}
+                />
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  {supplier.percentOfTotalSpend || Math.round(supplier.businessRelationship.spendYTD / 10000) / 100}% of total spend 
+                  (${((supplier.annualSpend || supplier.businessRelationship.spendLastYear) / 1000000).toFixed(2)}M annually)
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {supplier.onTimeDeliveryRate || Math.round(supplier.performance.delivery)}% on-time delivery
+                </Typography>
+              </Box>
+              
+              <Box>
+                <Typography variant="body2" fontWeight="medium" color="text.primary">
+                  Product Categories
+                </Typography>
+                <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap', gap: 0.5 }}>
+                  {(supplier.categories || [supplier.category]).slice(0, 2).map((category: string) => (
+                    <Chip
+                      key={category}
+                      label={category}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        fontSize: '0.7rem',
+                        borderColor: theme.palette.primary.light,
+                        color: theme.palette.primary.main,
+                      }}
+                    />
+                  ))}
+                  {(supplier.categories?.length || 0) > 2 && (
+                    <Chip
+                      label={`+${(supplier.categories?.length || 0) - 2} more`}
+                      size="small"
+                      variant="outlined"
+                      sx={{ fontSize: '0.7rem' }}
+                    />
+                  )}
+                </Stack>
+              </Box>
             </Box>
-
-            {/* Performance */}
-            <Box sx={{ mb: 2 }}>
-              <Chip
-                label={`Performance: ${supplier.performanceScore}/100`}
-                size="small"
-                sx={{
-                  backgroundColor: getStatusColor(supplier.performanceScore),
-                  color: 'white',
-                  fontWeight: 'bold',
-                }}
-              />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                {supplier.percentOfTotalSpend}% of total spend (${(supplier.annualSpend / 1000000).toFixed(2)}M annually)
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {supplier.onTimeDeliveryRate}% on-time delivery
-              </Typography>
-            </Box>
-
-            {/* Categories */}
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" fontWeight="medium">
-                Primary categories:
-              </Typography>
-              <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap', gap: 0.5 }}>
-                {supplier.categories.slice(0, 2).map((category) => (
-                  <Chip
-                    key={category}
-                    label={category}
-                    size="small"
-                    sx={{ 
-                      backgroundColor: theme.palette.primary.light,
-                      color: theme.palette.primary.main,
-                      fontSize: '0.7rem'
-                    }}
-                  />
-                ))}
-                {supplier.categories.length > 2 && (
-                  <Chip
-                    label={`+${supplier.categories.length - 2} more`}
-                    size="small"
-                    variant="outlined"
-                    sx={{ fontSize: '0.7rem' }}
-                  />
-                )}
-              </Stack>
-            </Box>
-
-            {/* Contract & Verification */}
-            <Box sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+            
+            {/* Card Footer */}
+            <Box sx={{ p: 2, backgroundColor: theme.palette.background.default }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                 <CalendarTodayIcon fontSize="small" sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
                 <Typography variant="body2" color="text.secondary">
-                  Contract expires: {new Date(supplier.contractExpiration).toLocaleDateString()}
+                  Contract expires: {new Date(supplier.contractExpiration || supplier.businessRelationship.contractRenewalDate).toLocaleDateString()}
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                {getVerificationStatusIcon(supplier.blockchainVerificationStatus)}
+                {getVerificationStatusIcon(supplier.blockchainVerificationStatus || (supplier.smartContract ? 'FULLY_VERIFIED' : 'VERIFICATION_PENDING'))}
                 <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
-                  Blockchain status: {getVerificationStatusText(supplier.blockchainVerificationStatus)}
+                  Blockchain status: {getVerificationStatusText(supplier.blockchainVerificationStatus || (supplier.smartContract ? 'FULLY_VERIFIED' : 'VERIFICATION_PENDING'))}
                 </Typography>
               </Box>
             </Box>
-
-            <Divider sx={{ my: 2 }} />
-
+            
             {/* Actions */}
-            <Stack direction="row" spacing={1} justifyContent="space-between">
-              <Tooltip title="Contact supplier">
-                <IconButton 
-                  size="small" 
-                  onClick={() => onContactSupplier(supplier)}
-                  sx={{ color: theme.palette.primary.main }}
-                >
-                  <EmailIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Create order">
-                <IconButton 
-                  size="small" 
-                  onClick={() => onCreateOrder(supplier)}
-                  sx={{ color: theme.palette.secondary.main }}
-                >
-                  <ShoppingCartIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Make payment">
-                <span>
-                  <IconButton 
-                    size="small" 
+            <Divider />
+            <Box sx={{ 
+              p: 1.5, 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Tooltip title="Contact Supplier">
+                  <IconButton
+                    size="small"
+                    onClick={() => onContactSupplier(supplier)}
+                    sx={{ color: theme.palette.primary.main }}
+                  >
+                    <EmailIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Create Order">
+                  <IconButton
+                    size="small"
+                    onClick={() => onCreateOrder(supplier)}
+                    sx={{ color: theme.palette.info.main }}
+                  >
+                    <ShoppingCartIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Make Payment">
+                  <IconButton
+                    size="small"
                     onClick={() => onPaySupplier(supplier)}
                     sx={{ color: theme.palette.success.main }}
-                    disabled={!supplier.shellTokenEnabled}
+                    disabled={!(supplier.shellTokenEnabled || (supplier.smartContract?.autoPaymentEnabled))}
                   >
                     <AccountBalanceWalletIcon fontSize="small" />
                   </IconButton>
-                </span>
-              </Tooltip>
+                </Tooltip>
+              </Box>
+              
               <Button
                 variant="text"
+                size="small"
                 endIcon={<ArrowForwardIcon />}
                 onClick={() => onViewDetails(supplier)}
-                size="small"
+                sx={{ fontWeight: 'medium' }}
               >
-                Details
+                View Details
               </Button>
-            </Stack>
-          </Paper>
+            </Box>
+          </Box>
         ))}
       </Box>
-    </Box>
+    </StandardCard>
   );
 };
 

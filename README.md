@@ -1,44 +1,87 @@
-# HandReceipt 
-
-I’m making an application called “HandReceipt”, that is a blockchain-based supply chain management and inventory management product.
-
-Its first goal is to replace the completely hand-written, analog process of property transfers between soldiers in the military. The dual use purpose is that of a cheap, simpler, and more reliable version of SAP 4HANA, NetSuite, Oracle supply chain management, Microsoft dynamics. Both uses would employ underlying blockchain technology. They would use blockchain-based digital twins of property/ items and QR codes that are scannable. For the civilian version of application, there would also be USDC stablecoins with smart contracts enabled that would allow for super fast payment resolution upon receipt of goods confirmed by blockchain.
+Below is a description of an application I am making. Please read for context for follow-on questions:
 
 
+HandReceipt Product Description
 
-The frontend is made up of 3 parts:
+**HandReceipt: Modernizing Supply Chain Management**
 
-```
-www.handreceipt.com (CloudFront Distribution)
-├── / (root - frontend_login project)
-│   ├── index.html           # Version selector landing page
-│   └── assets/              # Login selector assets
-│
-├── /defense
-│   ├── index.html           # Defense app landing page
-│   └── assets/              # Defense app assets
-│
-└── /civilian (not made yet)-- but the part I want to work on now
-    └── [Not yet implemented]
-```
+HandReceipt is a blockchain-powered inventory and supply chain management solution that streamlines property tracking and transfers.
 
+**Military Application:**
+HandReceipt digitizes the currently paper-based process of equipment transfers between military personnel. Using scannable QR codes linked to blockchain-secured digital records, we make property accountability simple, reliable, and auditable.
 
+**Commercial Application:** 
+For businesses, HandReceipt offers a more affordable and user-friendly alternative to complex enterprise systems like SAP, NetSuite, Oracle, and Microsoft Dynamics. Our solution maintains accurate inventory records while enabling rapid payment processing through USDC stablecoin integration—allowing for immediate settlement when goods are received and verified.
+- Commercial users can also integrate with existing systems rather than requiring entirely new hardware or processes, including integrating standard enterprise software APIs (ERP, WMS, inventory management)
+- Commercial users can also employ existing scanning infrastructure (barcodes, RFID) rather than QR codes
+- Commercial users also have ability to create smart contracts outlining payment terms between counterparties in supply chain 
+    - Use of either traditional wire or HandReceipt’s own native coin called “Shells” (SHL)
+    - Smart contracts completely customizable (can trigger payments based on receipt of goods, sales levels, inventory levels, etc)
 
-
-The codebase here is meant to the civilian version of the frontend. Right now, it is a complete copy of the defense version of the frontend. 
-
-
-When we started this conversation, this was the current tree structure-- all files were for the defense version of the frontend, as it was a complete copy of the defense version of the frontend, which I wanted to retain as a reference for the civilian version for styling. The tree structure below are all the files that were specific to defense version of the frontend. Please delete them (probably most of them) or convert them to be used in the civilian version.
-
+**Key Benefits:**
+- Secure digital property records that can't be altered
+- Simple QR-code scanning for transfers and verification (user uses mobile app to scan a QR code on property or inventory to initiate a transfer request, counterparty who currently in possession of (or is assigned) that piece of property receives notification of transfer request which they can either accept or decline)
+- Reduced paperwork and manual processes
+- Transparent tracking throughout the supply chain
+- Optional fast payment settlement for commercial users
 
 
+HandReceipt UI Design Project - Comprehensive Summary
+Initial Application Description
+
+Our previous conversation began with a description of HandReceipt, a blockchain-powered inventory and supply chain management solution with two distinct applications:
+* Military Application: Digitizing paper-based equipment transfers using QR codes linked to blockchain records
+* Commercial Application: Providing an affordable alternative to complex systems like SAP/Oracle with features including:
+    * Integration with existing systems (ERP, WMS)
+    * Support for existing scanning infrastructure (barcodes, RFID)
+    * Smart contracts for payment terms using USDC stablecoin or "Shells" (SHL) token
+    * Secure digital records, simplified transfers, and reduced paperwork
+
+Target Customer Analysis
+We identified specific commercial target customers:
+1. Mid-Market Manufacturers & Distributors ($10M-$250M revenue)
+2. Contract Manufacturers & Suppliers
+3. Equipment Rental & Leasing Companies
+4. Regulated Industry Supply Chains
+5. Cross-Border Trade Companies
+6. Multi-Location Retail Operations
+7. Field Service Organizations
+
+Mock User Development
+For demonstration purposes, we created a detailed mock user:
+* Company: TechComponents International
+    * $45M electronics components distributor
+    * Locations in Austin (HQ), San Jose, and Guadalajara
+    * Imports from Asian manufacturers, distributes to North America
+* User: Michael Chen, Operations Director
+* Pain Points: Inventory discrepancies, payment delays, customs issues, etc.
+
+Sidebar Navigation Structure
+I proposed a comprehensive sidebar containing:
+1. Dashboard
+2. Inventory
+3. Transfers
+4. Suppliers
+5. Payments
+6. Alerts
+7. Analytics
+8. Team
+9. Settings
+10. Warehouse location selector
+11. Quick actions section
+
+
+brendantoole@Brendans-MacBook-Pro frontend_civ % tree
+[ 576]  .
 ├── [  96]  public
 │   └── [  96]  assets
-│       └── [  64]  images
-├── [ 512]  src
+│       └── [  96]  images
+│           └── [  64]  avatars
+├── [  64]  scripts
+├── [ 480]  src
 │   ├── [ 128]  app
-│   │   ├── [ 370]  App.tsx
-│   │   └── [3.2K]  routes.tsx
+│   │   ├── [ 545]  App.tsx
+│   │   └── [4.8K]  routes.tsx
 │   ├── [ 160]  components
 │   │   ├── [ 192]  common
 │   │   │   ├── [ 877]  DashboardCard.tsx
@@ -48,43 +91,116 @@ When we started this conversation, this was the current tree structure-- all fil
 │   │   ├── [  64]  dashboard
 │   │   └── [ 256]  layout
 │   │       ├── [  96]  AppBar
-│   │       │   └── [8.8K]  AppBarContent.tsx
-│   │       ├── [1.2K]  AppBar.tsx
+│   │       │   └── [ 11K]  AppBarContent.tsx
+│   │       ├── [1.5K]  AppBar.tsx
 │   │       ├── [1.3K]  MainLayout.tsx
 │   │       ├── [2.5K]  NavItem.tsx
 │   │       ├── [ 613]  Navigation.tsx
-│   │       └── [3.1K]  Sidebar.tsx
+│   │       └── [ 18K]  Sidebar.tsx
 │   ├── [  64]  config
 │   ├── [  64]  constants
 │   ├── [  64]  features
 │   ├── [  96]  hooks
-│   │   └── [3.7K]  useProperty.ts
+│   │   └── [ 522]  useTitle.ts
 │   ├── [ 856]  main.tsx
-│   ├── [ 384]  pages
-│   │   ├── [ 192]  Dashboard
-│   │   │   ├── [ 288]  components
-│   │   │   │   ├── [4.0K]  ActionableTasks.tsx
-│   │   │   │   ├── [2.8K]  KeyMetricsCards.tsx
-│   │   │   │   ├── [4.7K]  NotificationsPanel.tsx
-│   │   │   │   ├── [2.1K]  PersonnelOverview.tsx
-│   │   │   │   ├── [4.0K]  RecentActivityFeed.tsx
-│   │   │   │   ├── [2.4K]  UnitInventoryOverview.tsx
-│   │   │   │   └── [ 346]  index.ts
-│   │   │   ├── [3.0K]  index.tsx
-│   │   │   ├── [5.0K]  mockData.ts
-│   │   │   └── [1.7K]  types.ts
-│   │   ├── [ 160]  Maintenance
+│   ├── [1.9K]  mockData.ts
+│   ├── [ 544]  pages
+│   │   ├── [ 128]  Alerts
 │   │   │   ├── [ 320]  components
-│   │   │   │   ├── [5.6K]  BlockchainRecordModal.tsx
-│   │   │   │   ├── [ 17K]  GenerateDA2404Modal.tsx
-│   │   │   │   ├── [2.0K]  MaintenanceChart.tsx
-│   │   │   │   ├── [ 10K]  MaintenanceDetailsModal.tsx
-│   │   │   │   ├── [9.8K]  MaintenanceFilters.tsx
-│   │   │   │   ├── [6.6K]  MaintenanceTable.tsx
-│   │   │   │   ├── [1.9K]  MetricCard.tsx
-│   │   │   │   └── [3.7K]  RequestMaintenanceModal.tsx
-│   │   │   ├── [ 13K]  index.tsx
-│   │   │   └── [1.4K]  types.ts
+│   │   │   │   ├── [9.3K]  AlertActionCenter.tsx
+│   │   │   │   ├── [ 22K]  AlertDetailPanel.tsx
+│   │   │   │   ├── [ 14K]  AlertImpactAssessment.tsx
+│   │   │   │   ├── [ 11K]  AlertResponsePerformance.tsx
+│   │   │   │   ├── [ 16K]  AlertTable.tsx
+│   │   │   │   ├── [ 12K]  AlertTrendAnalysis.tsx
+│   │   │   │   ├── [ 10K]  ComplianceQualityAlertCenter.tsx
+│   │   │   │   └── [6.6K]  ComponentAlertCorrelationMap.tsx
+│   │   │   └── [ 16K]  index.tsx
+│   │   ├── [ 160]  Analytics
+│   │   │   ├── [ 192]  components
+│   │   │   │   ├── [4.9K]  AnalyticsCard.tsx
+│   │   │   │   ├── [ 14K]  AnalyticsFilters.tsx
+│   │   │   │   ├── [9.2K]  ProductPerformance.tsx
+│   │   │   │   └── [5.5K]  SalesChart.tsx
+│   │   │   ├── [ 15K]  index.tsx
+│   │   │   └── [7.6K]  types.ts
+│   │   ├── [ 192]  Dashboard
+│   │   │   ├── [ 768]  components
+│   │   │   │   ├── [5.8K]  ActionItemsPanel.tsx
+│   │   │   │   ├── [4.4K]  ActiveShipmentsTable.tsx
+│   │   │   │   ├── [5.5K]  ActivityTimeline.tsx
+│   │   │   │   ├── [6.9K]  BlockchainRecordsTable.tsx
+│   │   │   │   ├── [6.7K]  CriticalAlertsCard.tsx
+│   │   │   │   ├── [5.9K]  CriticalStockTable.tsx
+│   │   │   │   ├── [3.9K]  DashboardHeader.tsx
+│   │   │   │   ├── [3.8K]  KPICard.tsx
+│   │   │   │   ├── [2.7K]  KeyMetricsCards.tsx
+│   │   │   │   ├── [5.1K]  MetricsCard.tsx
+│   │   │   │   ├── [4.7K]  NotificationsPanel.tsx
+│   │   │   │   ├── [3.8K]  PaymentMethodsChart.tsx
+│   │   │   │   ├── [7.9K]  PendingApprovalsTable.tsx
+│   │   │   │   ├── [ 14K]  PerformanceMetricsGrid.tsx
+│   │   │   │   ├── [2.6K]  QuickActionsPanel.tsx
+│   │   │   │   ├── [8.1K]  QuickTransferCard.tsx
+│   │   │   │   ├── [4.0K]  RecentActivityFeed.tsx
+│   │   │   │   ├── [1.8K]  Sparkline.tsx
+│   │   │   │   ├── [3.1K]  SupplierDistributionChart.tsx
+│   │   │   │   ├── [9.7K]  SupplyChainVisualization.tsx
+│   │   │   │   ├── [5.1K]  WarehouseInventoryChart.tsx
+│   │   │   │   └── [1.4K]  index.ts
+│   │   │   ├── [5.6K]  index.tsx
+│   │   │   ├── [ 22K]  mockData.ts
+│   │   │   └── [1.7K]  types.ts
+│   │   ├── [ 192]  Inventory
+│   │   │   ├── [ 448]  components
+│   │   │   │   ├── [ 17K]  AddItemModal.tsx
+│   │   │   │   ├── [ 14K]  AdvancedSearchPanel.tsx
+│   │   │   │   ├── [4.3K]  CategoryCards.tsx
+│   │   │   │   ├── [7.1K]  CategoryScrollBar.tsx
+│   │   │   │   ├── [ 13K]  InventoryFilters.tsx
+│   │   │   │   ├── [7.4K]  InventoryHeader.tsx
+│   │   │   │   ├── [9.8K]  InventoryInsights.tsx
+│   │   │   │   ├── [4.3K]  InventoryMetricsStrip.tsx
+│   │   │   │   ├── [ 15K]  InventoryTable.tsx
+│   │   │   │   ├── [ 28K]  ItemDetailsDrawer.tsx
+│   │   │   │   ├── [ 27K]  TechComponentsInventoryTable.tsx
+│   │   │   │   └── [7.5K]  WarehouseSelector.tsx
+│   │   │   ├── [ 22K]  index.tsx
+│   │   │   ├── [ 17K]  mockData.ts
+│   │   │   └── [4.6K]  types.ts
+│   │   ├── [ 160]  Orders
+│   │   │   ├── [ 320]  components
+│   │   │   │   ├── [ 52K]  AdvancedOrderTable.tsx
+│   │   │   │   ├── [ 39K]  CreateOrderModal.tsx
+│   │   │   │   ├── [ 22K]  OrderAnalytics.tsx
+│   │   │   │   ├── [ 28K]  OrderDetailsDrawer.tsx
+│   │   │   │   ├── [ 10K]  OrderFilters.tsx
+│   │   │   │   ├── [ 14K]  OrderPerformanceMetrics.tsx
+│   │   │   │   ├── [ 14K]  OrderPipeline.tsx
+│   │   │   │   └── [ 15K]  OrderTable.tsx
+│   │   │   ├── [ 25K]  index.tsx
+│   │   │   └── [1.8K]  types.ts
+│   │   ├── [ 160]  Partners
+│   │   │   ├── [ 192]  components
+│   │   │   │   ├── [7.4K]  PartnerCard.tsx
+│   │   │   │   ├── [ 18K]  PartnerDetails.tsx
+│   │   │   │   ├── [ 12K]  PartnerFilters.tsx
+│   │   │   │   └── [8.6K]  PartnersList.tsx
+│   │   │   ├── [ 21K]  index.tsx
+│   │   │   └── [2.7K]  types.ts
+│   │   ├── [ 192]  Payments
+│   │   │   ├── [ 320]  components
+│   │   │   │   ├── [ 25K]  CreatePaymentModal.tsx
+│   │   │   │   ├── [ 10K]  PaymentActions.tsx
+│   │   │   │   ├── [ 16K]  PaymentFilters.tsx
+│   │   │   │   ├── [3.3K]  PaymentHeader.tsx
+│   │   │   │   ├── [ 15K]  PaymentMethodComparison.tsx
+│   │   │   │   ├── [9.6K]  PaymentStatusCards.tsx
+│   │   │   │   ├── [ 26K]  PaymentTable.tsx
+│   │   │   │   └── [9.4K]  PaymentTrendsChart.tsx
+│   │   │   ├── [ 14K]  index.tsx
+│   │   │   ├── [ 13K]  mockData.ts
+│   │   │   └── [3.7K]  types.ts
 │   │   ├── [ 128]  Profile
 │   │   │   ├── [ 256]  components
 │   │   │   │   ├── [9.1K]  AccountSettings.tsx
@@ -94,95 +210,87 @@ When we started this conversation, this was the current tree structure-- all fil
 │   │   │   │   ├── [4.2K]  ProfileHeader.tsx
 │   │   │   │   └── [3.6K]  RolesAndPermissions.tsx
 │   │   │   └── [5.9K]  index.tsx
-│   │   ├── [ 128]  Property
-│   │   │   ├── [5.1K]  PropertySkeleton.tsx
-│   │   │   └── [ 12K]  index.tsx
-│   │   ├── [ 160]  QrManagement
+│   │   ├── [  96]  Reports
+│   │   │   └── [ 484]  index.tsx
+│   │   ├── [ 160]  Scanner
 │   │   │   ├── [ 224]  components
-│   │   │   │   ├── [5.4K]  GenerateQRSection.tsx
-│   │   │   │   ├── [5.1K]  ManageQRSection.tsx
-│   │   │   │   ├── [2.8K]  MetricsSection.tsx
-│   │   │   │   ├── [4.1K]  PreviewModal.tsx
-│   │   │   │   └── [5.9K]  QRDetailsModal.tsx
-│   │   │   ├── [5.3K]  index.tsx
-│   │   │   └── [ 939]  types.ts
-│   │   ├── [ 160]  Reports
-│   │   │   ├── [ 224]  components
-│   │   │   │   ├── [5.3K]  BlockchainVerificationModal.tsx
-│   │   │   │   ├── [6.8K]  CustomReportForm.tsx
-│   │   │   │   ├── [ 10K]  GenerateReportModal.tsx
-│   │   │   │   ├── [6.0K]  ReportChart.tsx
-│   │   │   │   └── [2.6K]  ReportFilters.tsx
-│   │   │   ├── [ 13K]  index.tsx
-│   │   │   └── [2.2K]  types.ts
+│   │   │   │   ├── [ 13K]  QRScanner.tsx
+│   │   │   │   ├── [8.6K]  QRScannerComponent.tsx
+│   │   │   │   ├── [6.1K]  ScanHistoryTable.tsx
+│   │   │   │   ├── [ 22K]  ScanResultModal.tsx
+│   │   │   │   └── [ 13K]  ScanResultView.tsx
+│   │   │   ├── [ 23K]  index.tsx
+│   │   │   └── [3.2K]  types.ts
 │   │   ├── [  96]  Settings
 │   │   │   └── [ 11K]  index.tsx
-│   │   ├── [ 160]  Transfers
-│   │   │   ├── [ 288]  components
+│   │   ├── [ 224]  Suppliers
+│   │   │   ├── [ 23K]  SuppliersPage.tsx
+│   │   │   ├── [ 512]  components
+│   │   │   │   ├── [ 13K]  ComponentQualityTracking.tsx
+│   │   │   │   ├── [ 11K]  KeySupplierCards.tsx
+│   │   │   │   ├── [ 13K]  SmartContractStatusPanel.tsx
+│   │   │   │   ├── [ 14K]  SupplierAnalytics.tsx
+│   │   │   │   ├── [ 17K]  SupplierFilter.tsx
+│   │   │   │   ├── [4.1K]  SupplierHeader.tsx
+│   │   │   │   ├── [5.9K]  SupplierHealthDashboard.tsx
+│   │   │   │   ├── [ 13K]  SupplierMapView.tsx
+│   │   │   │   ├── [9.6K]  SupplierOrderStatusPanel.tsx
+│   │   │   │   ├── [ 12K]  SupplierProfileSummary.tsx
+│   │   │   │   ├── [ 18K]  SupplierRiskManagement.tsx
+│   │   │   │   ├── [6.5K]  SupplierTabPanel.tsx
+│   │   │   │   ├── [ 34K]  SupplierTable.tsx
+│   │   │   │   └── [ 320]  shared
+│   │   │   ├── [ 16K]  mockData.ts
+│   │   │   ├── [4.9K]  types.ts
+│   │   │   └── [ 128]  utils
+│   │   │       ├── [1.9K]  colorSystem.ts
+│   │   │       └── [6.5K]  statusColors.ts
+│   │   ├── [  96]  Team
+│   │   │   └── [ 457]  index.tsx
+│   │   ├── [ 192]  Transfers
+│   │   │   ├── [ 512]  components
+│   │   │   │   ├── [ 22K]  AdvancedTransferTable.tsx
 │   │   │   │   ├── [3.4K]  ConfirmReceiptTab.tsx
-│   │   │   │   ├── [7.9K]  InitiateTransferForm.tsx
+│   │   │   │   ├── [4.5K]  CriticalTransfersPanel.tsx
+│   │   │   │   ├── [8.0K]  InitiateTransferForm.tsx
 │   │   │   │   ├── [4.0K]  QRScanner.tsx
 │   │   │   │   ├── [1.7K]  StatusBar.tsx
+│   │   │   │   ├── [ 12K]  TransferActionsPanel.tsx
+│   │   │   │   ├── [7.5K]  TransferAnalyticsPanel.tsx
 │   │   │   │   ├── [6.4K]  TransferDetailsModal.tsx
-│   │   │   │   ├── [4.0K]  TransferFilters.tsx
-│   │   │   │   └── [4.9K]  TransferTable.tsx
-│   │   │   ├── [6.8K]  index.tsx
-│   │   │   └── [1.2K]  types.ts
-│   │   ├── [ 160]  UnitInventory
-│   │   │   ├── [ 256]  components
-│   │   │   │   ├── [7.1K]  AddItemModal.tsx
-│   │   │   │   ├── [4.1K]  InventoryFilters.tsx
-│   │   │   │   ├── [6.7K]  InventoryTable.tsx
-│   │   │   │   ├── [6.2K]  ItemDetailsDrawer.tsx
-│   │   │   │   ├── [1.4K]  MetricCard.tsx
-│   │   │   │   └── [2.8K]  UnitHierarchySelector.tsx
-│   │   │   ├── [ 14K]  index.tsx
-│   │   │   └── [1.3K]  types.ts
-│   │   └── [ 160]  UserManagement
+│   │   │   │   ├── [ 15K]  TransferFilters.tsx
+│   │   │   │   ├── [6.6K]  TransferHeader.tsx
+│   │   │   │   ├── [9.9K]  TransferStatsStrip.tsx
+│   │   │   │   ├── [9.3K]  TransferStatusPipeline.tsx
+│   │   │   │   └── [5.4K]  TransferTable.tsx
+│   │   │   ├── [ 12K]  index.tsx
+│   │   │   ├── [ 17K]  mockData.ts
+│   │   │   └── [3.6K]  types.ts
+│   │   └── [ 160]  Wallet
 │   │       ├── [ 224]  components
-│   │       │   ├── [6.3K]  ActivityLogs.tsx
-│   │       │   ├── [6.3K]  AddEditUserModal.tsx
-│   │       │   ├── [6.7K]  RolesPermissions.tsx
-│   │       │   ├── [3.0K]  UserFilters.tsx
-│   │       │   └── [6.6K]  UserTable.tsx
-│   │       ├── [4.4K]  index.tsx
-│   │       └── [ 708]  types.ts
-│   ├── [  64]  services
+│   │       │   ├── [9.7K]  QRCodeModal.tsx
+│   │       │   ├── [ 11K]  SmartContractTable.tsx
+│   │       │   ├── [9.2K]  TransactionFilters.tsx
+│   │       │   ├── [ 10K]  TransactionTable.tsx
+│   │       │   └── [ 11K]  TransferModal.tsx
+│   │       ├── [ 15K]  index.tsx
+│   │       └── [1.6K]  types.ts
 │   ├── [ 128]  store
 │   │   ├── [ 570]  index.ts
 │   │   └── [  96]  slices
-│   │       └── [ 128]  property
-│   │           ├── [4.4K]  slice.ts
-│   │           └── [6.7K]  thunks.ts
-│   ├── [  64]  styles
-│   ├── [ 192]  theme
-│   │   ├── [1.2K]  colors.ts
-│   │   ├── [4.7K]  index.ts
+│   │       └── [  96]  property
+│   │           └── [1.4K]  slice.ts
+│   ├── [ 224]  theme
+│   │   ├── [1.6K]  ThemeContext.tsx
+│   │   ├── [2.5K]  colors.ts
+│   │   ├── [6.0K]  index.ts
 │   │   ├── [ 409]  types.ts
 │   │   └── [3.0K]  typography.ts
-│   ├── [ 128]  types
-│   │   ├── [ 222]  navigation.ts
-│   │   └── [2.8K]  property.ts
-│   └── [  64]  utils
-└── [ 757]  vite.config.ts
+│   ├── [  96]  types
+│   │   └── [ 222]  navigation.ts
+│   └── [  96]  utils
+│       └── [4.2K]  formatters.ts
+└── [ 758]  vite.config.ts
 
-42 directories, 92 files
+53 directories, 166 files
 brendantoole@Brendans-MacBook-Pro frontend_civ % 
-
-
-
-
-I want the pages and tabs on the sidebar of the civilian version to be as follows:
-
-Dashboard - Overview with key metrics, pending transfers, recent activities, and alerts
-Inventory - Digital twin registry of all items, current stock levels, locations, and item history
-Transfers - Manage outgoing and incoming transfers, track status of items in transit
-Orders - Purchase orders, sales orders, and order fulfillment tracking
-Wallet - USDC balance, payment history, smart contract status, and transaction records
-Scanner - QR code scanning interface for quick item lookup and transfers
-Partners - Supplier and customer directory, relationship management
-Analytics - Supply chain visibility, performance metrics, audit trails, and custom reports
-Settings - User management, permissions, blockchain network settings, and integration options
-
-
-Can you recommend a plan of action for me to take to make the civilian version of the frontend with those new pages while retaining the styles and themes, etc, of the defense version?

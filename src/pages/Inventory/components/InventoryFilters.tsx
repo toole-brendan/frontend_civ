@@ -74,6 +74,7 @@ interface InventoryFiltersProps {
   initialFilters?: Partial<InventoryFiltersState>;
   onFilterChange: (filters: InventoryFiltersState) => void;
   onClearFilters: () => void;
+  onClose: () => void;
 }
 
 export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
@@ -81,6 +82,7 @@ export const InventoryFilters: React.FC<InventoryFiltersProps> = ({
   initialFilters,
   onFilterChange,
   onClearFilters,
+  onClose
 }) => {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [filters, setFilters] = useState<InventoryFiltersState>({

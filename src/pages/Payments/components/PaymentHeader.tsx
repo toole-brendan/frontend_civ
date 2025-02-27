@@ -1,154 +1,184 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   Typography, 
   Button, 
-  Stack, 
-  Chip, 
-  Paper,
+  IconButton,
+  InputAdornment,
+  TextField,
+  Badge,
+  Stack,
+  Tooltip,
   useTheme
 } from '@mui/material';
-import { 
-  AlertCircle, 
-  Plus, 
-  CheckCircle, 
-  Calendar, 
-  Settings 
-} from 'lucide-react';
+import SearchIcon from '@mui/icons-material/Search';
+import TuneIcon from '@mui/icons-material/Tune';
+import AddIcon from '@mui/icons-material/Add';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import ScheduleIcon from '@mui/icons-material/Schedule';
 
 interface PaymentHeaderProps {
   pendingAmount: number;
-  ytdSavings: number;
-  pendingPayments: number;
+  criticalPayments: number;
+  totalPayments: number;
   onCreatePayment: () => void;
   onApprovePending: () => void;
   onSchedulePayment: () => void;
   onOpenSettings: () => void;
+  onViewAll: () => void;
+  onSearch?: (query: string) => void;
+  onExportData?: () => void;
+  onGenerateReport?: () => void;
 }
 
 const PaymentHeader: React.FC<PaymentHeaderProps> = ({
   pendingAmount,
-  ytdSavings,
-  pendingPayments,
+  criticalPayments,
+  totalPayments = 0,
   onCreatePayment,
   onApprovePending,
   onSchedulePayment,
-  onOpenSettings
+  onOpenSettings,
+  onViewAll,
+  onSearch = () => {},
+  onExportData = () => {},
+  onGenerateReport = () => {}
 }) => {
   const theme = useTheme();
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  };
+  
+  const handleSearchSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    onSearch(searchQuery);
+  };
 
   return (
-    <Paper 
-      elevation={0} 
+    <Box 
       sx={{ 
-        p: 3, 
         mb: 3, 
-        borderRadius: 2,
-        background: theme.palette.background.paper,
-        border: `1px solid ${theme.palette.divider}`
+        pb: 2,
+        borderBottom: `1px solid ${theme.palette.divider}`,
       }}
     >
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: 2 }}>
+      {/* Title and Stats Row */}
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          mb: 2,
+        }}
+      >
         <Box>
           <Typography variant="h4" fontWeight="bold" color="primary">
             Payment Management
           </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 1 }}>
-            <Typography variant="subtitle1" color="text.secondary">
-              ${pendingAmount.toLocaleString()} in Pending Payments
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary" sx={{ display: 'flex', alignItems: 'center' }}>
-              |
-            </Typography>
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
-                color: theme.palette.success.main,
-                fontWeight: 'medium'
-              }}
-            >
-              ${ytdSavings.toLocaleString()} YTD Fee Savings
-            </Typography>
-          </Box>
+          <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5 }}>
+            ${pendingAmount.toLocaleString()} Pending | {criticalPayments} Critical | {totalPayments} Total Payments
+          </Typography>
         </Box>
-
-        <Chip
-          icon={<AlertCircle size={16} />}
-          label={`${pendingPayments} Payments Due Within 48 Hours`}
-          color="warning"
-          sx={{ 
-            height: 'auto',
-            py: 1,
-            px: 1,
-            mt: { xs: 2, md: 0 },
-            '& .MuiChip-label': {
-              px: 1,
-              py: 0.5,
-              fontSize: '0.9rem',
-              fontWeight: 'medium'
-            }
-          }}
-        />
+        <form onSubmit={handleSearchSubmit}>
+          <TextField
+            size="small"
+            placeholder="Search payments..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            sx={{ width: 250 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton size="small">
+                    <TuneIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+          />
+        </form>
       </Box>
 
+      {/* Actions Row */}
       <Stack 
-        direction={{ xs: 'column', sm: 'row' }} 
+        direction="row" 
         spacing={2} 
-        sx={{ mt: 3 }}
+        sx={{ 
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
       >
-        <Button 
-          variant="contained" 
-          startIcon={<Plus size={18} />}
-          onClick={onCreatePayment}
-          sx={{ 
-            fontWeight: 'medium',
-            px: 2,
-            py: 1
-          }}
-        >
-          Create New Payment
-        </Button>
-        <Button 
-          variant="outlined" 
-          color="primary"
-          startIcon={<CheckCircle size={18} />}
-          onClick={onApprovePending}
-          sx={{ 
-            fontWeight: 'medium',
-            px: 2,
-            py: 1
-          }}
-        >
-          Approve Pending Payments ({pendingPayments})
-        </Button>
-        <Button 
-          variant="outlined" 
-          color="primary"
-          startIcon={<Calendar size={18} />}
-          onClick={onSchedulePayment}
-          sx={{ 
-            fontWeight: 'medium',
-            px: 2,
-            py: 1
-          }}
-        >
-          Schedule Future Payment
-        </Button>
-        <Button 
-          variant="outlined" 
-          color="primary"
-          startIcon={<Settings size={18} />}
-          onClick={onOpenSettings}
-          sx={{ 
-            fontWeight: 'medium',
-            px: 2,
-            py: 1
-          }}
-        >
-          Payment Settings
-        </Button>
+        <Stack direction="row" spacing={2}>
+          <Button 
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={onCreatePayment}
+            sx={{ 
+              backgroundColor: theme.palette.primary.main,
+              '&:hover': {
+                backgroundColor: theme.palette.primary.dark,
+              }
+            }}
+          >
+            Create Payment
+          </Button>
+          <Button 
+            variant="outlined"
+            startIcon={<ScheduleIcon />}
+            onClick={onSchedulePayment}
+          >
+            Schedule Payment
+          </Button>
+          <Button 
+            variant="outlined"
+            startIcon={<NotificationsIcon />}
+            onClick={onApprovePending}
+          >
+            Approve Pending
+          </Button>
+          <Button 
+            variant="outlined"
+            startIcon={<AssessmentIcon />}
+            onClick={onViewAll}
+          >
+            View All Payments
+          </Button>
+        </Stack>
+        <Stack direction="row" spacing={2}>
+          <Button 
+            variant="outlined"
+            startIcon={<PictureAsPdfIcon />}
+            onClick={onGenerateReport}
+          >
+            Generate Report
+          </Button>
+          <Button 
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={onExportData}
+          >
+            Export Data
+          </Button>
+          <Tooltip title="Payment Settings">
+            <IconButton onClick={onOpenSettings}>
+              <HelpOutlineIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </Stack>
-    </Paper>
+    </Box>
   );
 };
 

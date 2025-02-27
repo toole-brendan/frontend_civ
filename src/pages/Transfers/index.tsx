@@ -194,7 +194,7 @@ const TransfersPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ width: '100%', overflow: 'hidden' }}>
       {/* Header */}
       <TransferHeader
         onCreateTransfer={handleCreateTransfer}

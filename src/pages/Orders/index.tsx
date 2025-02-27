@@ -96,9 +96,9 @@ const PageHeader = styled(Box)(({ theme }) => ({
     left: 0,
     width: '100%',
     height: '100%',
-    background: 'url(/abstract-pattern.png) right top no-repeat',
-    backgroundSize: 'cover',
-    opacity: 0.05,
+    background: theme.palette.mode === 'dark' 
+      ? 'rgba(0, 0, 0, 0.2)' 
+      : 'rgba(0, 0, 0, 0.05)',
     zIndex: 0,
   },
 }));

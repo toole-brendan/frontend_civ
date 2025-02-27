@@ -20,6 +20,11 @@ import {
   OutlinedInput,
   Checkbox,
   ListItemText,
+  InputAdornment,
+  Badge,
+  Grid,
+  Card,
+  CardContent,
 } from '@mui/material';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import SearchIcon from '@mui/icons-material/Search';
@@ -27,6 +32,10 @@ import ClearIcon from '@mui/icons-material/Clear';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
+import TuneIcon from '@mui/icons-material/Tune';
+import StandardCard from './shared/StandardCard';
 
 // Available filter options for the component
 const RISK_LEVELS = ['Low', 'Medium', 'High', 'Critical'];
@@ -79,6 +88,7 @@ const SupplierFilter: React.FC<SupplierFilterProps> = ({
   const [filterState, setFilterState] = React.useState<FilterState>(initialFilterState);
   const [filterName, setFilterName] = React.useState('');
   const [activeFiltersCount, setActiveFiltersCount] = React.useState(0);
+  const [showSavedFilters, setShowSavedFilters] = React.useState(false);
 
   // Calculate the number of active filters
   React.useEffect(() => {
@@ -99,36 +109,37 @@ const SupplierFilter: React.FC<SupplierFilterProps> = ({
     event: SelectChangeEvent<string[]>,
     filterKey: keyof FilterState
   ) => {
-    const { value } = event.target;
+    const {
+      target: { value },
+    } = event;
+    
     setFilterState({
       ...filterState,
       [filterKey]: typeof value === 'string' ? value.split(',') : value,
     });
   };
 
-  // Handle changes to performance score slider
+  // Handle changes to performance score range
   const handlePerformanceScoreChange = (event: Event, newValue: number | number[]) => {
-    if (Array.isArray(newValue)) {
-      setFilterState({
-        ...filterState,
-        minPerformanceScore: newValue[0],
-        maxPerformanceScore: newValue[1],
-      });
-    }
+    const [min, max] = newValue as number[];
+    setFilterState({
+      ...filterState,
+      minPerformanceScore: min,
+      maxPerformanceScore: max,
+    });
   };
 
-  // Handle changes to annual spend slider
+  // Handle changes to annual spend range
   const handleAnnualSpendChange = (event: Event, newValue: number | number[]) => {
-    if (Array.isArray(newValue)) {
-      setFilterState({
-        ...filterState,
-        minAnnualSpend: newValue[0],
-        maxAnnualSpend: newValue[1],
-      });
-    }
+    const [min, max] = newValue as number[];
+    setFilterState({
+      ...filterState,
+      minAnnualSpend: min,
+      maxAnnualSpend: max,
+    });
   };
 
-  // Handle search query changes
+  // Handle changes to search query
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setFilterState({
       ...filterState,
@@ -136,21 +147,21 @@ const SupplierFilter: React.FC<SupplierFilterProps> = ({
     });
   };
 
-  // Apply the current filters
+  // Apply filters
   const applyFilters = () => {
     onFilterChange(filterState);
   };
 
-  // Reset all filters to their initial state
+  // Reset filters to initial state
   const resetFilters = () => {
     setFilterState(initialFilterState);
     onFilterChange(initialFilterState);
   };
 
-  // Save the current filter configuration
+  // Save current filter configuration
   const saveFilter = () => {
     if (filterName.trim()) {
-      onSaveFilter(filterName.trim(), filterState);
+      onSaveFilter(filterName, filterState);
       setFilterName('');
     }
   };
@@ -165,156 +176,187 @@ const SupplierFilter: React.FC<SupplierFilterProps> = ({
   };
 
   return (
-    <Box sx={{ width: '100%', mb: 3 }}>
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          p: 2, 
-          border: `1px solid ${theme.palette.divider}`, 
-          borderRadius: 1 
-        }}
-      >
-        {/* Basic search and filter controls */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <FilterAltIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-            <Typography variant="h6" fontWeight="bold">
-              Filter Suppliers
-            </Typography>
-            {activeFiltersCount > 0 && (
-              <Chip 
-                label={`${activeFiltersCount} active`} 
-                size="small" 
-                color="primary" 
-                sx={{ ml: 1 }}
-              />
-            )}
-          </Box>
-          
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Button
-              variant="text"
-              size="small"
-              onClick={resetFilters}
-              sx={{ mr: 1 }}
-            >
-              Reset
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={applyFilters}
-              color="primary"
-              sx={{ mr: 1 }}
-            >
-              Apply Filters
-            </Button>
-            <IconButton 
-              size="small" 
-              onClick={() => setExpanded(!expanded)}
-              sx={{ 
-                backgroundColor: expanded ? theme.palette.primary.light : undefined,
-                color: expanded ? theme.palette.primary.main : undefined,
-                '&:hover': {
-                  backgroundColor: expanded ? theme.palette.primary.light : undefined,
-                }
+    <Paper 
+      elevation={0} 
+      sx={{ 
+        mb: 3, 
+        border: `1px solid ${theme.palette.divider}`,
+        borderRadius: theme.shape.borderRadius,
+        overflow: 'hidden',
+      }}
+    >
+      {/* Quick Filters - Always Visible */}
+      <Box sx={{ p: 2 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={4}>
+            <TextField
+              fullWidth
+              placeholder="Search suppliers..."
+              value={filterState.searchQuery}
+              onChange={handleSearchChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: filterState.searchQuery && (
+                  <InputAdornment position="end">
+                    <IconButton 
+                      size="small" 
+                      onClick={() => setFilterState({...filterState, searchQuery: ''})}
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ),
               }}
-            >
-              {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            </IconButton>
-          </Box>
-        </Box>
-        
-        {/* Search field - always visible */}
-        <Box sx={{ mt: 2, display: 'flex', alignItems: 'center' }}>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Search suppliers by name, id, or contact..."
-            value={filterState.searchQuery}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />,
-              endAdornment: filterState.searchQuery ? (
-                <IconButton 
-                  size="small" 
-                  onClick={() => setFilterState({ ...filterState, searchQuery: '' })}
-                >
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              ) : null,
-            }}
-          />
-        </Box>
-        
-        {/* Expanded filter options */}
-        <Collapse in={expanded} timeout="auto">
-          <Box sx={{ mt: 3 }}>
-            <Divider />
+              size="small"
+            />
+          </Grid>
+          
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="risk-level-label">Risk Level</InputLabel>
+              <Select
+                labelId="risk-level-label"
+                multiple
+                value={filterState.riskLevels}
+                onChange={(e) => handleMultiSelectChange(e, 'riskLevels')}
+                input={<OutlinedInput label="Risk Level" />}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => (
+                      <Chip key={value} label={value} size="small" />
+                    ))}
+                  </Box>
+                )}
+              >
+                {RISK_LEVELS.map((level) => (
+                  <MenuItem key={level} value={level}>
+                    <Checkbox checked={filterState.riskLevels.indexOf(level) > -1} />
+                    <ListItemText primary={level} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="category-label">Category</InputLabel>
+              <Select
+                labelId="category-label"
+                multiple
+                value={filterState.categories}
+                onChange={(e) => handleMultiSelectChange(e, 'categories')}
+                input={<OutlinedInput label="Category" />}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => (
+                      <Chip key={value} label={value} size="small" />
+                    ))}
+                  </Box>
+                )}
+              >
+                {CATEGORIES.map((category) => (
+                  <MenuItem key={category} value={category}>
+                    <Checkbox checked={filterState.categories.indexOf(category) > -1} />
+                    <ListItemText primary={category} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          
+          <Grid item xs={12} md={2}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => setExpanded(!expanded)}
+                startIcon={expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                size="small"
+                fullWidth
+              >
+                <Badge badgeContent={activeFiltersCount} color="primary" sx={{ mr: 1 }}>
+                  <TuneIcon />
+                </Badge>
+                {expanded ? 'Less' : 'More'}
+              </Button>
+              
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={applyFilters}
+                size="small"
+              >
+                Apply
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </Box>
+      
+      {/* Advanced Filters - Expandable */}
+      <Collapse in={expanded}>
+        <Divider />
+        <Box sx={{ p: 2, bgcolor: theme.palette.background.default }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" gutterBottom>
+                Performance Score
+              </Typography>
+              <Box sx={{ px: 1 }}>
+                <Slider
+                  value={[filterState.minPerformanceScore, filterState.maxPerformanceScore]}
+                  onChange={handlePerformanceScoreChange}
+                  valueLabelDisplay="auto"
+                  min={0}
+                  max={100}
+                  marks={[
+                    { value: 0, label: '0' },
+                    { value: 25, label: '25' },
+                    { value: 50, label: '50' },
+                    { value: 75, label: '75' },
+                    { value: 100, label: '100' },
+                  ]}
+                />
+              </Box>
+            </Grid>
             
-            {/* Filter grid */}
-            <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
-              {/* Risk Levels */}
-              <FormControl size="small">
-                <InputLabel id="risk-level-label">Risk Level</InputLabel>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" gutterBottom>
+                Annual Spend
+              </Typography>
+              <Box sx={{ px: 1 }}>
+                <Slider
+                  value={[filterState.minAnnualSpend, filterState.maxAnnualSpend]}
+                  onChange={handleAnnualSpendChange}
+                  valueLabelDisplay="auto"
+                  min={0}
+                  max={1000000}
+                  marks={[
+                    { value: 0, label: '$0' },
+                    { value: 250000, label: '$250K' },
+                    { value: 500000, label: '$500K' },
+                    { value: 750000, label: '$750K' },
+                    { value: 1000000, label: '$1M' },
+                  ]}
+                  valueLabelFormat={(value) => formatCurrency(value)}
+                />
+              </Box>
+            </Grid>
+            
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="region-label">Region</InputLabel>
                 <Select
-                  labelId="risk-level-label"
-                  multiple
-                  value={filterState.riskLevels}
-                  onChange={(e) => handleMultiSelectChange(e, 'riskLevels')}
-                  input={<OutlinedInput label="Risk Level" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </Box>
-                  )}
-                >
-                  {RISK_LEVELS.map((level) => (
-                    <MenuItem key={level} value={level}>
-                      <Checkbox checked={filterState.riskLevels.indexOf(level) > -1} />
-                      <ListItemText primary={level} />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              
-              {/* Categories */}
-              <FormControl size="small">
-                <InputLabel id="categories-label">Categories</InputLabel>
-                <Select
-                  labelId="categories-label"
-                  multiple
-                  value={filterState.categories}
-                  onChange={(e) => handleMultiSelectChange(e, 'categories')}
-                  input={<OutlinedInput label="Categories" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </Box>
-                  )}
-                >
-                  {CATEGORIES.map((category) => (
-                    <MenuItem key={category} value={category}>
-                      <Checkbox checked={filterState.categories.indexOf(category) > -1} />
-                      <ListItemText primary={category} />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              
-              {/* Regions */}
-              <FormControl size="small">
-                <InputLabel id="regions-label">Regions</InputLabel>
-                <Select
-                  labelId="regions-label"
+                  labelId="region-label"
                   multiple
                   value={filterState.regions}
                   onChange={(e) => handleMultiSelectChange(e, 'regions')}
-                  input={<OutlinedInput label="Regions" />}
+                  input={<OutlinedInput label="Region" />}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                       {selected.map((value) => (
@@ -331,9 +373,10 @@ const SupplierFilter: React.FC<SupplierFilterProps> = ({
                   ))}
                 </Select>
               </FormControl>
-              
-              {/* Verification Status */}
-              <FormControl size="small">
+            </Grid>
+            
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth size="small">
                 <InputLabel id="verification-status-label">Verification Status</InputLabel>
                 <Select
                   labelId="verification-status-label"
@@ -357,9 +400,10 @@ const SupplierFilter: React.FC<SupplierFilterProps> = ({
                   ))}
                 </Select>
               </FormControl>
-              
-              {/* Shell Token Status */}
-              <FormControl size="small">
+            </Grid>
+            
+            <Grid item xs={12} md={4}>
+              <FormControl fullWidth size="small">
                 <InputLabel id="shell-token-status-label">Shell Token Status</InputLabel>
                 <Select
                   labelId="shell-token-status-label"
@@ -383,103 +427,76 @@ const SupplierFilter: React.FC<SupplierFilterProps> = ({
                   ))}
                 </Select>
               </FormControl>
+            </Grid>
+          </Grid>
+          
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<BookmarkIcon />}
+                onClick={() => setShowSavedFilters(!showSavedFilters)}
+                size="small"
+              >
+                Saved Filters
+              </Button>
+              
+              {showSavedFilters && (
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <Select
+                    value=""
+                    displayEmpty
+                    onChange={(e) => onLoadFilter(e.target.value)}
+                  >
+                    <MenuItem value="" disabled>
+                      Select a filter
+                    </MenuItem>
+                    {savedFilters.map((filter) => (
+                      <MenuItem key={filter.name} value={filter.name}>
+                        {filter.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
             </Box>
             
-            {/* Sliders */}
-            <Box sx={{ mt: 3, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 4 }}>
-              {/* Performance Score Range */}
-              <Box>
-                <Typography variant="body2" gutterBottom>
-                  Performance Score Range
-                </Typography>
-                <Slider
-                  value={[filterState.minPerformanceScore, filterState.maxPerformanceScore]}
-                  onChange={handlePerformanceScoreChange}
-                  valueLabelDisplay="auto"
-                  min={0}
-                  max={100}
-                  sx={{ mt: 2 }}
-                />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    {filterState.minPerformanceScore}%
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {filterState.maxPerformanceScore}%
-                  </Typography>
-                </Box>
-              </Box>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              {activeFiltersCount > 0 && (
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  onClick={resetFilters}
+                  size="small"
+                >
+                  Reset
+                </Button>
+              )}
               
-              {/* Annual Spend Range */}
-              <Box>
-                <Typography variant="body2" gutterBottom>
-                  Annual Spend Range
-                </Typography>
-                <Slider
-                  value={[filterState.minAnnualSpend, filterState.maxAnnualSpend]}
-                  onChange={handleAnnualSpendChange}
-                  valueLabelDisplay="auto"
-                  min={0}
-                  max={1000000}
-                  valueLabelFormat={(value) => formatCurrency(value)}
-                  sx={{ mt: 2 }}
-                />
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    {formatCurrency(filterState.minAnnualSpend)}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {formatCurrency(filterState.maxAnnualSpend)}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-            
-            {/* Saved Filters */}
-            <Box sx={{ mt: 3 }}>
-              <Divider />
-              <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="body2" fontWeight="bold">
-                  Saved Filters
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <TextField
-                    size="small"
-                    placeholder="Save current filter as..."
-                    value={filterName}
-                    onChange={(e) => setFilterName(e.target.value)}
-                    sx={{ width: 200, mr: 1 }}
-                  />
-                  <Tooltip title="Save current filter">
-                    <IconButton size="small" onClick={saveFilter} disabled={!filterName.trim()}>
-                      <SaveAltIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </Box>
+              <TextField
+                placeholder="Filter name"
+                value={filterName}
+                onChange={(e) => setFilterName(e.target.value)}
+                size="small"
+                sx={{ width: 150 }}
+              />
               
-              {/* List of saved filters */}
-              <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {savedFilters.map((filter) => (
-                  <Chip
-                    key={filter.name}
-                    label={filter.name}
-                    onClick={() => onLoadFilter(filter.name)}
-                    onDelete={() => {/* Delete saved filter logic would go here */}}
-                    sx={{ backgroundColor: theme.palette.primary.light }}
-                  />
-                ))}
-                {savedFilters.length === 0 && (
-                  <Typography variant="caption" color="text.secondary">
-                    No saved filters yet. Create filters and save them for quick access.
-                  </Typography>
-                )}
-              </Box>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<SaveAltIcon />}
+                onClick={saveFilter}
+                disabled={!filterName.trim()}
+                size="small"
+              >
+                Save
+              </Button>
             </Box>
           </Box>
-        </Collapse>
-      </Paper>
-    </Box>
+        </Box>
+      </Collapse>
+    </Paper>
   );
 };
 

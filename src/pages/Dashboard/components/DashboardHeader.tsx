@@ -2,43 +2,66 @@ import React, { useState } from 'react';
 import {
   Box,
   Typography,
+  Button,
+  InputAdornment,
+  TextField,
+  IconButton,
+  Tooltip,
+  useTheme,
+  Badge,
   FormControl,
   Select,
   MenuItem,
-  Button,
-  IconButton,
-  Badge,
-  Tooltip,
-  useTheme,
-  SelectChangeEvent,
-  InputLabel
+  InputLabel,
+  SelectChangeEvent
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import TuneIcon from '@mui/icons-material/Tune';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import DateRangeIcon from '@mui/icons-material/DateRange';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import PageHeader from '../../../components/common/PageHeader';
 
 interface DashboardHeaderProps {
   userName: string;
   notificationCount: number;
   onNotificationsClick?: () => void;
   onExportClick?: () => void;
+  onGenerateReport?: () => void;
+  onRefreshData?: () => void;
+  onSearch?: (query: string) => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   userName,
   notificationCount,
-  onNotificationsClick,
-  onExportClick
+  onNotificationsClick = () => {},
+  onExportClick = () => {},
+  onGenerateReport = () => {},
+  onRefreshData = () => {},
+  onSearch = () => {}
 }) => {
   const theme = useTheme();
   const [warehouse, setWarehouse] = useState<string>('all');
   const [date, setDate] = useState<Date | null>(new Date());
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleWarehouseChange = (event: SelectChangeEvent) => {
     setWarehouse(event.target.value);
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value);
+  };
+
+  const handleSearchSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    onSearch(searchQuery);
   };
 
   // Get current day of week and date
@@ -51,41 +74,74 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   });
 
   return (
-    <Box sx={{ mb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+    <PageHeader>
+      {/* Title and Stats Row */}
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          mb: 2,
+        }}
+      >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+          <Typography variant="h4" fontWeight="bold" color="primary">
             Welcome back, {userName}
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
+          <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5 }}>
             Here's your overview for {dayOfWeek}, {formattedDate}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Tooltip title="Notifications">
-            <IconButton color="default" onClick={onNotificationsClick}>
-              <Badge badgeContent={notificationCount} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-          </Tooltip>
-          <Box sx={{ minWidth: 150 }}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="warehouse-select-label">Location</InputLabel>
-              <Select
-                labelId="warehouse-select-label"
-                id="warehouse-select"
-                value={warehouse}
-                label="Location"
-                onChange={handleWarehouseChange}
-              >
-                <MenuItem value="all">All Locations</MenuItem>
-                <MenuItem value="austin">Austin</MenuItem>
-                <MenuItem value="sanJose">San Jose</MenuItem>
-                <MenuItem value="guadalajara">Guadalajara</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
+        <form onSubmit={handleSearchSubmit}>
+          <TextField
+            size="small"
+            placeholder="Search dashboard..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            sx={{ width: 250 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton size="small">
+                    <TuneIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+          />
+        </form>
+      </Box>
+
+      {/* Actions Row */}
+      <Box 
+        sx={{ 
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel id="warehouse-select-label">Location</InputLabel>
+            <Select
+              labelId="warehouse-select-label"
+              id="warehouse-select"
+              value={warehouse}
+              label="Location"
+              onChange={handleWarehouseChange}
+            >
+              <MenuItem value="all">All Locations</MenuItem>
+              <MenuItem value="austin">Austin</MenuItem>
+              <MenuItem value="sanJose">San Jose</MenuItem>
+              <MenuItem value="guadalajara">Guadalajara</MenuItem>
+            </Select>
+          </FormControl>
+          
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DatePicker
               label="Date Range"
@@ -99,24 +155,57 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               }}
             />
           </LocalizationProvider>
-          <Tooltip title="Export Dashboard">
-            <Button
-              variant="outlined"
-              startIcon={<FileDownloadIcon />}
-              onClick={onExportClick}
-              size="small"
-            >
-              Export
-            </Button>
+          
+          <Button 
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={onRefreshData}
+          >
+            Refresh Data
+          </Button>
+        </Box>
+        
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button 
+            variant="outlined"
+            startIcon={<AssessmentIcon />}
+            onClick={onGenerateReport}
+          >
+            Analytics
+          </Button>
+          
+          <Button 
+            variant="outlined"
+            startIcon={<PictureAsPdfIcon />}
+            onClick={onGenerateReport}
+          >
+            Generate Report
+          </Button>
+          
+          <Button 
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={onExportClick}
+          >
+            Export Data
+          </Button>
+          
+          <Tooltip title="Notifications">
+            <IconButton onClick={onNotificationsClick}>
+              <Badge badgeContent={notificationCount} color="error">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Learn more about the dashboard">
+            <IconButton>
+              <HelpOutlineIcon />
+            </IconButton>
           </Tooltip>
         </Box>
       </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="caption" color="text.secondary">
-          Last updated: {new Date().toLocaleTimeString()}
-        </Typography>
-      </Box>
-    </Box>
+    </PageHeader>
   );
 };
 

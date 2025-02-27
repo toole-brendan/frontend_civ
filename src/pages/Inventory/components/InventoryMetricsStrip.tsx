@@ -3,107 +3,146 @@ import {
   Box,
   Paper,
   Typography,
-  Divider,
+  Button,
+  Grid,
   useTheme,
   alpha,
-  Tooltip
+  Tooltip,
+  Card,
+  CardContent,
+  CardActions,
+  Divider
 } from '@mui/material';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { InventoryMetrics } from '../types';
 
 interface InventoryMetricsStripProps {
   metrics: InventoryMetrics;
+  onReorderClick: () => void;
+  onValueDetailsClick: () => void;
+  onStockoutReportClick: () => void;
 }
 
 export const InventoryMetricsStrip: React.FC<InventoryMetricsStripProps> = ({
-  metrics
+  metrics,
+  onReorderClick = () => {},
+  onValueDetailsClick = () => {},
+  onStockoutReportClick = () => {}
 }) => {
   const theme = useTheme();
 
-  const metricItems = [
+  const metricCards = [
     {
-      icon: <AutorenewIcon />,
-      label: 'Inventory Turnover Rate',
-      value: `${metrics.turnoverRate}×`,
-      tooltip: 'Average turnover rate in the last 90 days',
-      color: theme.palette.primary.main
+      icon: <InventoryIcon fontSize="large" />,
+      label: 'Low Stock Items',
+      value: metrics.slowMovingItems,
+      tooltip: 'Items below reorder point that need attention',
+      color: theme.palette.warning.main,
+      actionLabel: 'Create Reorder',
+      action: onReorderClick,
+      bgColor: alpha(theme.palette.warning.main, 0.1)
     },
     {
-      icon: <AccessTimeIcon />,
-      label: 'Average Days on Hand',
-      value: `${metrics.averageDaysOnHand} days`,
-      tooltip: 'Average time inventory items remain in stock',
-      color: theme.palette.info.main
+      icon: <AttachMoneyIcon fontSize="large" />,
+      label: 'Total Inventory Value',
+      value: `$${metrics.totalValue.toLocaleString()}`,
+      tooltip: 'Current total value of all inventory items',
+      color: theme.palette.primary.main,
+      actionLabel: 'View Details',
+      action: onValueDetailsClick,
+      bgColor: alpha(theme.palette.primary.main, 0.1)
     },
     {
-      icon: <InventoryIcon />,
-      label: 'Slow-Moving Items',
-      value: `${metrics.slowMovingItems} SKUs`,
-      tooltip: 'Items with no movement for over 90 days',
-      color: theme.palette.warning.main
-    },
-    {
-      icon: <AttachMoneyIcon />,
-      label: 'Excess Inventory Value',
-      value: `$${metrics.excessInventoryValue.toLocaleString()}`,
-      tooltip: 'Value of inventory exceeding 180 days supply',
-      color: theme.palette.error.main
-    },
-    {
-      icon: <ErrorOutlineIcon />,
+      icon: <ErrorOutlineIcon fontSize="large" />,
       label: 'Stockout Events',
-      value: `${metrics.stockoutEvents}`,
+      value: metrics.stockoutEvents,
       tooltip: 'Number of stockout events in the last 30 days',
-      color: theme.palette.error.dark
+      color: theme.palette.error.main,
+      actionLabel: 'View Report',
+      action: onStockoutReportClick,
+      bgColor: alpha(theme.palette.error.main, 0.1)
     }
   ];
 
   return (
-    <Paper 
-      elevation={0} 
-      sx={{ 
-        p: 2, 
-        mb: 4, 
-        borderRadius: 2,
-        border: `1px solid ${theme.palette.divider}`,
-        backgroundColor: alpha(theme.palette.background.paper, 0.7)
-      }}
-    >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        {metricItems.map((item, index) => (
-          <React.Fragment key={index}>
-            <Tooltip title={item.tooltip} arrow placement="top">
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', px: 2 }}>
+    <Grid container spacing={3} sx={{ mb: 4 }}>
+      {metricCards.map((card, index) => (
+        <Grid item xs={12} md={4} key={index}>
+          <Card 
+            elevation={0} 
+            sx={{ 
+              height: '100%',
+              borderRadius: 2,
+              border: `1px solid ${theme.palette.divider}`,
+              backgroundColor: card.bgColor,
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: theme.shadows[4]
+              }
+            }}
+          >
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Box 
                   sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                    display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'center',
-                    color: item.color,
-                    mb: 1
+                    color: card.color,
+                    mr: 2,
+                    p: 1,
+                    borderRadius: '50%',
+                    backgroundColor: alpha(card.color, 0.1)
                   }}
                 >
-                  {item.icon}
+                  {card.icon}
                 </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, textAlign: 'center' }}>
-                  {item.label}
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', color: item.color }}>
-                  {item.value}
+                <Typography variant="h6" color="text.secondary">
+                  {card.label}
                 </Typography>
               </Box>
-            </Tooltip>
-            {index < metricItems.length - 1 && (
-              <Divider orientation="vertical" flexItem />
-            )}
-          </React.Fragment>
-        ))}
-      </Box>
-    </Paper>
+              
+              <Typography 
+                variant="h3" 
+                sx={{ 
+                  fontWeight: 'bold', 
+                  color: card.color,
+                  mb: 1
+                }}
+              >
+                {card.value}
+              </Typography>
+              
+              <Typography variant="body2" color="text.secondary">
+                {card.tooltip}
+              </Typography>
+            </CardContent>
+            
+            <Divider />
+            
+            <CardActions>
+              <Button 
+                color="inherit"
+                onClick={card.action}
+                endIcon={<ArrowForwardIcon />}
+                sx={{ 
+                  color: card.color,
+                  '&:hover': {
+                    backgroundColor: alpha(card.color, 0.1)
+                  }
+                }}
+              >
+                {card.actionLabel}
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
   );
 };
 

@@ -45,6 +45,7 @@ interface PaymentTableProps {
   onEditPayment: (paymentId: string) => void;
   onCancelPayment: (paymentId: string) => void;
   onProcessPayment: (paymentId: string) => void;
+  simplified?: boolean; // Optional prop for simplified view
 }
 
 const PaymentTable: React.FC<PaymentTableProps> = ({
@@ -52,7 +53,8 @@ const PaymentTable: React.FC<PaymentTableProps> = ({
   onViewPayment,
   onEditPayment,
   onCancelPayment,
-  onProcessPayment
+  onProcessPayment,
+  simplified = false // Default to full view
 }) => {
   const theme = useTheme();
   const [page, setPage] = useState(0);
@@ -167,10 +169,10 @@ const PaymentTable: React.FC<PaymentTableProps> = ({
       }}
     >
       <TableContainer>
-        <Table sx={{ minWidth: 1100 }}>
+        <Table sx={{ minWidth: simplified ? 700 : 1100 }}>
           <TableHead>
             <TableRow sx={{ backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)' }}>
-              <TableCell sx={{ width: 50 }}></TableCell>
+              {!simplified && <TableCell sx={{ width: 50 }}></TableCell>}
               <TableCell>
                 <Typography variant="subtitle2" fontWeight="bold">Invoice/Reference</Typography>
               </TableCell>
@@ -186,169 +188,197 @@ const PaymentTable: React.FC<PaymentTableProps> = ({
               <TableCell>
                 <Typography variant="subtitle2" fontWeight="bold">Status</Typography>
               </TableCell>
-              <TableCell>
-                <Typography variant="subtitle2" fontWeight="bold">Payment Method</Typography>
-              </TableCell>
-              <TableCell>
-                <Typography variant="subtitle2" fontWeight="bold">Fee/Savings</Typography>
-              </TableCell>
-              <TableCell>
-                <Typography variant="subtitle2" fontWeight="bold">PO Number</Typography>
-              </TableCell>
+              {!simplified && (
+                <>
+                  <TableCell>
+                    <Typography variant="subtitle2" fontWeight="bold">Payment Method</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" fontWeight="bold">Fee/Savings</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="subtitle2" fontWeight="bold">PO Number</Typography>
+                  </TableCell>
+                </>
+              )}
               <TableCell align="right">
                 <Typography variant="subtitle2" fontWeight="bold">Actions</Typography>
               </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {payments
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((payment) => (
-                <React.Fragment key={payment.id}>
-                  <TableRow 
-                    hover 
-                    sx={{ 
-                      cursor: 'pointer',
-                      '&:hover': {
-                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'
-                      },
-                      ...(expandedRow === payment.id && {
-                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'
-                      })
-                    }}
-                    onClick={() => handleToggleRow(payment.id)}
-                  >
+            {(rowsPerPage > 0
+              ? payments.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              : payments
+            ).map((payment) => (
+              <React.Fragment key={payment.id}>
+                <TableRow 
+                  hover 
+                  sx={{ 
+                    '&:hover': { 
+                      backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)' 
+                    },
+                    cursor: 'pointer',
+                    borderLeft: payment.urgency === 'critical' ? `4px solid ${theme.palette.error.main}` : 'none'
+                  }}
+                >
+                  {!simplified && (
                     <TableCell>
-                      <IconButton size="small">
+                      <IconButton 
+                        size="small" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleRow(payment.id);
+                        }}
+                      >
                         {expandedRow === payment.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                       </IconButton>
                     </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="medium">
+                  )}
+                  <TableCell 
+                    onClick={() => onViewPayment(payment.id)}
+                    sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      gap: 1
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <FileText size={16} style={{ marginRight: 8 }} />
+                      <Typography variant="body2">
                         {payment.invoiceNumber}
                       </Typography>
-                    </TableCell>
-                    <TableCell>
+                    </Box>
+                    {getUrgencyIndicator(payment.urgency, payment.dueDate)}
+                  </TableCell>
+                  <TableCell onClick={() => onViewPayment(payment.id)}>
+                    <Typography variant="body2">{payment.supplierName}</Typography>
+                  </TableCell>
+                  <TableCell onClick={() => onViewPayment(payment.id)}>
+                    <Typography variant="body2" fontWeight="medium">
+                      ${payment.amount.toLocaleString()}
+                    </Typography>
+                  </TableCell>
+                  <TableCell onClick={() => onViewPayment(payment.id)}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Calendar size={16} style={{ marginRight: 8 }} />
                       <Typography variant="body2">
-                        {payment.supplierName}
+                        {format(parseISO(payment.dueDate), 'MMM d, yyyy')}
                       </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="medium">
-                        ${payment.amount.toLocaleString()}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {getUrgencyIndicator(payment.urgency, payment.dueDate)}
-                        <Typography variant="body2">
-                          {format(parseISO(payment.dueDate), 'MMM d, yyyy')}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={payment.status} 
-                        size="small"
-                        sx={{ 
-                          backgroundColor: `${getStatusColor(payment.status)}20`,
-                          color: getStatusColor(payment.status),
-                          fontWeight: 'medium',
-                          borderRadius: 1
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {getPaymentMethodIcon(payment.paymentMethod)}
-                        <Typography variant="body2">
-                          {payment.paymentMethod}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">
-                          ${payment.feeAmount.toLocaleString()}
-                        </Typography>
-                        {payment.paymentMethod !== 'Traditional Wire' && (
-                          <Typography variant="body2" color="success.main" fontWeight="medium">
-                            Save ${payment.savingsAmount.toLocaleString()}
+                    </Box>
+                  </TableCell>
+                  <TableCell onClick={() => onViewPayment(payment.id)}>
+                    <Chip 
+                      label={payment.status} 
+                      size="small"
+                      sx={{ 
+                        backgroundColor: getStatusColor(payment.status),
+                        color: '#fff',
+                        fontWeight: 'medium',
+                        fontSize: '0.75rem'
+                      }}
+                    />
+                  </TableCell>
+                  {!simplified && (
+                    <>
+                      <TableCell onClick={() => onViewPayment(payment.id)}>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {getPaymentMethodIcon(payment.paymentMethod)}
+                          <Typography variant="body2" sx={{ ml: 1 }}>
+                            {payment.paymentMethod}
                           </Typography>
-                        )}
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <LinkIcon size={14} />
-                        {payment.linkedOrderNumber}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                        {payment.status !== 'Completed' && (
-                          <Tooltip title="Process Payment">
-                            <IconButton 
-                              size="small" 
-                              color="primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onProcessPayment(payment.id);
-                              }}
-                            >
-                              <CreditCard size={18} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        <Tooltip title="View Details">
-                          <IconButton 
-                            size="small" 
-                            color="info"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onViewPayment(payment.id);
-                            }}
-                          >
-                            <Eye size={18} />
-                          </IconButton>
-                        </Tooltip>
-                        {payment.status !== 'Completed' && payment.status !== 'Processing' && (
-                          <Tooltip title="Edit Payment">
-                            <IconButton 
-                              size="small" 
-                              color="warning"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEditPayment(payment.id);
-                              }}
-                            >
-                              <Edit size={18} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {payment.status !== 'Completed' && (
-                          <Tooltip title="Cancel Payment">
-                            <IconButton 
-                              size="small" 
-                              color="error"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onCancelPayment(payment.id);
-                              }}
-                            >
-                              <XCircle size={18} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                  
-                  {/* Expanded row details */}
+                        </Box>
+                      </TableCell>
+                      <TableCell onClick={() => onViewPayment(payment.id)}>
+                        <Box>
+                          <Typography variant="body2" color="error.main">
+                            -${payment.feeAmount.toLocaleString()}
+                          </Typography>
+                          {payment.savingsAmount > 0 && (
+                            <Typography variant="body2" color="success.main">
+                              +${payment.savingsAmount.toLocaleString()}
+                            </Typography>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell onClick={() => onViewPayment(payment.id)}>
+                        <Typography variant="body2">
+                          {payment.linkedOrderNumber}
+                        </Typography>
+                      </TableCell>
+                    </>
+                  )}
+                  <TableCell align="right">
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <Tooltip title="View details">
+                        <IconButton 
+                          size="small" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewPayment(payment.id);
+                          }}
+                          sx={{ mr: 1 }}
+                        >
+                          <Eye size={18} />
+                        </IconButton>
+                      </Tooltip>
+                      
+                      {payment.status !== 'Completed' && (
+                        <>
+                          {payment.status !== 'Processing' && (
+                            <Tooltip title="Edit payment">
+                              <IconButton 
+                                size="small" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onEditPayment(payment.id);
+                                }}
+                                sx={{ mr: 1 }}
+                              >
+                                <Edit size={18} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          
+                          {payment.status === 'Draft' || payment.status === 'Scheduled' ? (
+                            <Tooltip title="Cancel payment">
+                              <IconButton 
+                                size="small" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onCancelPayment(payment.id);
+                                }}
+                                sx={{ mr: simplified ? 0 : 1 }}
+                              >
+                                <XCircle size={18} />
+                              </IconButton>
+                            </Tooltip>
+                          ) : null}
+                          
+                          {!simplified && payment.status === 'Pending Approval' && (
+                            <Tooltip title="Process payment">
+                              <IconButton 
+                                size="small" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onProcessPayment(payment.id);
+                                }}
+                              >
+                                <CheckCircle size={18} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </>
+                      )}
+                    </Box>
+                  </TableCell>
+                </TableRow>
+                
+                {!simplified && expandedRow === payment.id && (
                   <TableRow>
-                    <TableCell colSpan={10} sx={{ p: 0, borderBottom: 'none' }}>
+                    <TableCell colSpan={10} sx={{ py: 0 }}>
                       <Collapse in={expandedRow === payment.id} timeout="auto" unmountOnExit>
-                        <Box sx={{ p: 3, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.01)' }}>
+                        <Box sx={{ py: 3, px: 2 }}>
                           <Grid container spacing={3}>
                             <Grid item xs={12} md={6}>
                               <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 2 }}>
@@ -565,21 +595,24 @@ const PaymentTable: React.FC<PaymentTableProps> = ({
                       </Collapse>
                     </TableCell>
                   </TableRow>
-                </React.Fragment>
-              ))}
+                )}
+              </React.Fragment>
+            ))}
           </TableBody>
         </Table>
       </TableContainer>
       
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25]}
-        component="div"
-        count={payments.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
+      {!simplified && (
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component="div"
+          count={payments.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
+      )}
     </Paper>
   );
 };
